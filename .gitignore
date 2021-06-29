@@ -1,0 +1,7 @@
+.idea/
+.gradle/
+build/
+
+/tomcat.*/
+/logs/
+/.sessions/
