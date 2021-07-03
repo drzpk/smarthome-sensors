@@ -7,9 +7,11 @@ import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.response.*
+import org.slf4j.LoggerFactory
 
 fun Application.setupStatusPages() {
     install(StatusPages) {
+        val log = LoggerFactory.getLogger("ExceptionHandler")
 
         val validationExceptionHandler = ValidationExceptionHandler()
 
@@ -26,6 +28,10 @@ fun Application.setupStatusPages() {
                 call.respond(HttpStatusCode.NotFound, ErrorDetails(cause.message))
             else
                 call.respond(HttpStatusCode.NotFound)
+        }
+
+        exception<Exception> { cause ->
+            log.error("Unhandled exception", cause)
         }
     }
 }

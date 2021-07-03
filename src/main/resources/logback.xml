@@ -12,9 +12,12 @@
         <appender-ref ref="CONSOLE"/>
     </root>
 
-    <logger name="Exposed" level="DEBUG" additivity="false">
+    <logger name="Exposed" level="OFF" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>
 
+    <logger name="dev.drzepka.smarthome.sensors.server" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
 
 </configuration>

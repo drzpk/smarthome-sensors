@@ -1,4 +1,4 @@
-package dev.drzepka.smarthome.sensors.server.infrastructure
+package dev.drzepka.smarthome.sensors.server.infrastructure.database
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -13,7 +13,7 @@ import liquibase.resource.ClassLoaderResourceAccessor
 import org.jetbrains.exposed.sql.Database
 import javax.sql.DataSource
 
-class DatabaseInitializer(config: ApplicationConfig) {
+class SQLDatabaseInitializer(config: ApplicationConfig) {
 
     private val log by Logger()
 
@@ -27,7 +27,7 @@ class DatabaseInitializer(config: ApplicationConfig) {
             Liquibase("classpath:/liquibase-changelog.xml", ClassLoaderResourceAccessor(), liquibaseDatabase)
         liquibase.update(Contexts(), LabelExpression())
 
-        log.info("Creating the database connection")
+        log.info("Creating the SQL database connection")
         Database.connect(dataSource)
     }
 
@@ -45,10 +45,10 @@ class DatabaseInitializer(config: ApplicationConfig) {
     }
 
     companion object {
-        private const val JDBC_URL = "database.jdbcUrl"
-        private const val DRIVER_CLASS_NAME = "database.driverClassName"
-        private const val USERNAME = "database.username"
-        private const val PASSWORD = "database.password"
-        private const val MAXIMUM_POOL_SIZE = "database.maximumPoolSize"
+        private const val JDBC_URL = "database.sql.jdbcUrl"
+        private const val DRIVER_CLASS_NAME = "database.sql.driverClassName"
+        private const val USERNAME = "database.sql.username"
+        private const val PASSWORD = "database.sql.password"
+        private const val MAXIMUM_POOL_SIZE = "database.sql.maximumPoolSize"
     }
 }

@@ -1,10 +1,3 @@
-buildscript {
-    dependencies {
-        val koinVersion: String by project
-        classpath("org.jetbrains.kotlin:kotlin-allopen:1.4.30")
-    }
-}
-
 plugins {
     application
     kotlin("jvm") version "1.5.20"
@@ -50,7 +43,9 @@ dependencies {
     implementation("org.liquibase:liquibase-core:4.3.2")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.10.2")
+    implementation("com.influxdb:influxdb-client-kotlin:2.3.0")
 
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
     testRuntimeOnly("com.h2database:h2:1.3.176")
@@ -63,7 +58,7 @@ dependencies {
 }
 
 allOpen {
-    annotation("dev.drzepka.tempmonitor.server.domain.util.Mockable")
+    annotation("dev.drzepka.smarthome.sensors.server.domain.util.Mockable")
 }
 
 configurations {
