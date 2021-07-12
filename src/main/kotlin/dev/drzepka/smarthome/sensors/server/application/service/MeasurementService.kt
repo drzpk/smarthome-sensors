@@ -46,7 +46,7 @@ class MeasurementService(
         }
 
         log.debug(
-            "Created {} measurements from logger {} (created: {}, duplicated: {}, errors: {})",
+            "Processed {} measurements from logger {} (created: {}, duplicated: {}, errors: {})",
             response.total, logger.id, response.created, response.duplicated, response.errors
         )
         return response
@@ -81,7 +81,8 @@ class MeasurementService(
         // The deviceId variable alone is sufficient to track duplicated measurements.
         val measurementInfo = MeasurementInfo(single.deviceId)
 
-        if (measurementTracker.exists(measurementInfo)) {
+        val measurement = measurementFactory.create(single, logger.id!!)
+        if (measurementTracker.exists(measurement.createdAt, measurementInfo)) {
             log.debug(
                 "Measurement from device {} has been already created within the minimum interval",
                 single.deviceId
@@ -89,7 +90,6 @@ class MeasurementService(
             return false
         }
 
-        val measurement = measurementFactory.create(single, logger.id!!)
         synchronized(queue) { queue.add(measurement) }
         log.trace("Added measurement {} to queue. New size: {}", measurement.createdAt, queue.size)
 

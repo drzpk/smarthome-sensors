@@ -12,16 +12,16 @@ class LifespanTrackerTest {
         val now = Instant.now()
         val tracker = LifespanTracker<TestItem>(Duration.ofSeconds(30L))
 
-        then(tracker.exists(TestItem(999))).isFalse
+        then(tracker.exists(now, TestItem(999))).isFalse
 
         tracker.track(now, TestItem(11))
-        then(tracker.exists(TestItem(11), now.plusSeconds(15))).isTrue
-        then(tracker.exists(TestItem(11), now.plusSeconds(29))).isTrue
-        then(tracker.exists(TestItem(11), now.plusSeconds(30))).isTrue
-        then(tracker.exists(TestItem(11), now.plusSeconds(31))).isFalse
+        then(tracker.exists(now.plusSeconds(15), TestItem(11))).isTrue
+        then(tracker.exists(now.plusSeconds(29), TestItem(11))).isTrue
+        then(tracker.exists(now.plusSeconds(30), TestItem(11))).isTrue
+        then(tracker.exists(now.plusSeconds(31), TestItem(11))).isFalse
 
         then(tracker.track(now.plusSeconds(31), TestItem(98), now = now.plusSeconds(31)))
-        then(tracker.exists(TestItem(11), now.plusSeconds(15))).isFalse
+        then(tracker.exists(now.plusSeconds(15), TestItem(11))).isFalse
     }
 
     @Test
@@ -33,12 +33,12 @@ class LifespanTrackerTest {
         tracker.track(now.plusSeconds(10), TestItem(2))
         tracker.track(now.plusSeconds(20), TestItem(3))
 
-        then(tracker.exists(TestItem(1), now.plusSeconds(20))).isTrue
+        then(tracker.exists(now.plusSeconds(20), TestItem(1))).isTrue
 
         tracker.track(now.plusSeconds(40), TestItem(4))
-        then(tracker.exists(TestItem(1), now.plusSeconds(40))).isFalse
-        then(tracker.exists(TestItem(2), now.plusSeconds(40))).isTrue
-        then(tracker.exists(TestItem(3), now.plusSeconds(40))).isTrue
+        then(tracker.exists(now.plusSeconds(40), TestItem(1))).isFalse
+        then(tracker.exists(now.plusSeconds(40), TestItem(2))).isTrue
+        then(tracker.exists(now.plusSeconds(40), TestItem(3))).isTrue
     }
 
     private data class TestItem(val i: Int)

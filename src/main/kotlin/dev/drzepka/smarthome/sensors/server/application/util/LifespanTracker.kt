@@ -18,19 +18,19 @@ class LifespanTracker<T>(private val lifespan: Duration) {
         }
     }
 
-    fun exists(obj: T, now: Instant = Instant.now()): Boolean {
+    fun exists(time: Instant, obj: T): Boolean {
         return lock.read {
             val found = map.entries.firstOrNull { it.value == obj }
-            found != null && isValid(found.key, now)
+            found != null && isValid(found.key, time)
         }
     }
 
-    private fun clearOldData(now: Instant) {
+    private fun clearOldData(time: Instant) {
         val it = map.iterator()
 
         while (it.hasNext()) {
             val next = it.next()
-            if (!isValid(next.key, now))
+            if (!isValid(next.key, time))
                 it.remove()
             else
                 break
