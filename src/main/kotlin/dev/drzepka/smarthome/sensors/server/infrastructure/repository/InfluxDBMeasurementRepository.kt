@@ -5,23 +5,23 @@ import com.influxdb.client.write.Point
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
-import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDatabaseInitializer
+import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDBDatabaseManager
 
-class InfluxDBMeasurementRepository(private val initializer: InfluxDatabaseInitializer) : MeasurementRepository {
+class InfluxDBMeasurementRepository(private val influxDbManager: InfluxDBDatabaseManager) : MeasurementRepository {
 
     private val log by Logger()
 
-    override suspend fun save(measurements: Collection<Measurement>) {
-        log.debug("Saving {} measurements", measurements.size)
+    override suspend fun save(groupId: Int, measurements: Collection<Measurement>) {
+        log.debug("Saving {} measurements from group {}", measurements.size, groupId)
+
         val points = measurements.map { convertToPoint(it) }
         if (points.isEmpty())
             return
 
-        initializer.influxDBClient
+        influxDbManager.getInfluxDBClient(groupId)
             .getWriteKotlinApi()
-            .writePoints(points, bucket = "temperature") // todo: dynamic bucket
+            .writePoints(points, bucket = "temperature")
     }
-
 
     private fun convertToPoint(measurement: Measurement): Point {
         val point = Point(TEMPERATURE_MEASUREMENT)

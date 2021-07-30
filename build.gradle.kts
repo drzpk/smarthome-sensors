@@ -44,6 +44,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.10.2")
     implementation("com.influxdb:influxdb-client-kotlin:2.3.0")
+    implementation("com.typesafe:config:1.4.1")
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")

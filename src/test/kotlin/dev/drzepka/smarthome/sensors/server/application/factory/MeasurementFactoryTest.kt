@@ -4,6 +4,7 @@ import dev.drzepka.smarthome.sensors.server.application.FieldError
 import dev.drzepka.smarthome.sensors.server.application.ObjectError
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
+import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
 import org.assertj.core.api.BDDAssertions.catchThrowable
@@ -23,7 +24,8 @@ class MeasurementFactoryTest {
 
     private val deviceRepository = mock<DeviceRepository> {
         on { findById(eq(1)) } doAnswer {
-            Device().apply {
+            val group = Group().apply { id = 1 }
+            Device(group).apply {
                 active = true
             }
         }
@@ -40,6 +42,7 @@ class MeasurementFactoryTest {
         then(measurement.createdAt).isEqualTo(now.minusMillis(200))
         then(measurement.deviceId).isEqualTo(1)
         then(measurement.loggerId).isEqualTo(2)
+        then(measurement.groupId).isEqualTo(1)
         then(measurement.temperature).isEqualTo(BigDecimal("21.21"))
         then(measurement.humidity).isEqualTo(BigDecimal("55.49"))
         then(measurement.batteryVoltage).isEqualTo(BigDecimal("3.192"))

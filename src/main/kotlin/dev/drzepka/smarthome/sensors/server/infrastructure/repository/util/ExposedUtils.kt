@@ -5,9 +5,10 @@ import dev.drzepka.smarthome.sensors.server.domain.TimeRangeQuery
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.*
 
-fun IdTable<*>.countAllRows(): Long {
+fun IdTable<*>.countRows(where: Op<Boolean>? = null): Long {
     val countExpression = this.id.count()
-    val countQuery = this.slice(countExpression).selectAll()
+    val slice = this.slice(countExpression)
+    val countQuery = if (where != null) slice.select(where) else slice.selectAll()
     return countQuery.first()[countExpression]
 }
 

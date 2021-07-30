@@ -32,6 +32,7 @@ fun Application.setupStatusPages() {
 
         exception<Exception> { cause ->
             log.error("Unhandled exception", cause)
+            call.respond(HttpStatusCode.InternalServerError)
         }
     }
 }

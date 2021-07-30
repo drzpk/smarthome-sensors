@@ -1,5 +1,6 @@
 package dev.drzepka.smarthome.sensors.server.application.dto.device
 
+import dev.drzepka.smarthome.sensors.server.application.dto.group.GroupResource
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import java.time.Instant
 
@@ -9,6 +10,7 @@ class DeviceResource {
     var description = ""
     var mac = ""
     var createdAt: Instant = Instant.now()
+    var group: GroupResource? = null
 
     companion object {
         fun fromEntity(device: Device): DeviceResource = DeviceResource().apply {
@@ -17,6 +19,7 @@ class DeviceResource {
             description = device.description
             mac = device.mac
             createdAt = device.createdAt
+            group = device.group?.let { GroupResource.fromEntity(it) }
         }
     }
 }

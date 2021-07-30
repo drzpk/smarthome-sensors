@@ -4,7 +4,7 @@ import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.WriteKotlinApi
 import com.influxdb.client.write.Point
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
-import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDatabaseInitializer
+import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDBDatabaseManager
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
@@ -21,13 +21,13 @@ internal class InfluxDBMeasurementRepositoryTest {
 
     @Test
     fun `should save measurements`() = runBlocking {
-        val measurement = Measurement(Instant.now(), 1, 2)
+        val measurement = Measurement(Instant.now(), 1, 2, 3)
         measurement.temperature = BigDecimal("23.12")
         measurement.humidity = BigDecimal("70.40")
         measurement.batteryVoltage = BigDecimal("3.122")
         measurement.batteryLevel = 92
 
-        getRepository().save(listOf(measurement))
+        getRepository().save(0, listOf(measurement))
 
         val captor = argumentCaptor<List<Point>>()
         verify(writeApi).writePoints(captor.capture(), any(), eq(null))
@@ -61,8 +61,8 @@ internal class InfluxDBMeasurementRepositoryTest {
             on { getWriteKotlinApi() }.doReturn(writeApi)
         }
 
-        val initializer = mock<InfluxDatabaseInitializer> {
-            on { this.influxDBClient }.doReturn(influxDBClient)
+        val initializer = mock<InfluxDBDatabaseManager> {
+            on { getInfluxDBClient(eq(0)) }.doReturn(influxDBClient)
         }
 
         return InfluxDBMeasurementRepository(initializer)

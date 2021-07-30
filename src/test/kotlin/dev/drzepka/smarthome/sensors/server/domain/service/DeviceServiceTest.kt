@@ -4,9 +4,11 @@ import dev.drzepka.smarthome.sensors.server.application.FieldError
 import dev.drzepka.smarthome.sensors.server.application.dto.device.CreateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.service.DeviceService
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
+import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import dev.drzepka.smarthome.sensors.server.domain.exception.NotFoundException
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
+import dev.drzepka.smarthome.sensors.server.domain.repository.GroupRepository
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.BDDAssertions.assertThatCode
 import org.assertj.core.api.BDDAssertions.catchThrowable
@@ -20,6 +22,7 @@ import org.mockito.kotlin.*
 internal class DeviceServiceTest {
 
     private val deviceRepository = mock<DeviceRepository>()
+    private val groupRepository = mock<GroupRepository>()
 
     @Test
     fun `should create device`() {
@@ -27,7 +30,10 @@ internal class DeviceServiceTest {
             name = "name"
             description = "description"
             mac = "mac"
+            groupId = 2
         }
+
+        whenever(groupRepository.findById(eq(2))).thenReturn(Group().apply { id = 2 })
 
         whenever(deviceRepository.save(any())).thenAnswer { invocation ->
             (invocation.getArgument(0) as Device).apply { id = 1 }
@@ -44,7 +50,7 @@ internal class DeviceServiceTest {
         val entity = captor.firstValue
         then(entity.name).isEqualTo(request.name)
         then(entity.description).isEqualTo(request.description)
-        then(entity.active).isTrue()
+        then(entity.active).isTrue
     }
 
     @Test
@@ -55,7 +61,7 @@ internal class DeviceServiceTest {
         then(caught).isInstanceOf(ValidationException::class.java)
 
         val validationException = caught as ValidationException
-        then(validationException.validationErrors.errors).hasSize(3)
+        then(validationException.validationErrors.errors).hasSize(4)
 
         val validationErrors = validationException.validationErrors.errors
         then(validationErrors[0]).isInstanceOf(FieldError::class.java)
@@ -64,14 +70,16 @@ internal class DeviceServiceTest {
         then((validationErrors[1] as FieldError).field).isEqualTo("description")
         then(validationErrors[2]).isInstanceOf(FieldError::class.java)
         then((validationErrors[2] as FieldError).field).isEqualTo("mac")
+        then(validationErrors[3]).isInstanceOf(FieldError::class.java)
+        then((validationErrors[3] as FieldError).field).isEqualTo("groupId")
     }
 
     @Test
     fun `should get device`() {
-        val activeDevice = Device().apply { id = 1; active = true }
+        val activeDevice = Device(Group()).apply { id = 1; active = true }
         whenever(deviceRepository.findById(1)).thenReturn(activeDevice)
 
-        val inactiveDevice = Device().apply { id = 2;active = false }
+        val inactiveDevice = Device(Group()).apply { id = 2;active = false }
         whenever(deviceRepository.findById(2)).thenReturn(inactiveDevice)
 
         val service = getService()
@@ -87,14 +95,15 @@ internal class DeviceServiceTest {
 
     @Test
     fun `should delete device`() {
-        val device = Device().apply { active = true }
+        val device = Device(Group()).apply { active = true }
         whenever(deviceRepository.findById(12)).thenReturn(device)
 
         getService().deleteDevice(12)
 
-        then(device.active).isFalse()
+        then(device.active).isFalse
+        then(device.group).isNull()
         verify(deviceRepository, times(1)).save(same(device))
     }
 
-    private fun getService(): DeviceService = DeviceService(deviceRepository)
+    private fun getService(): DeviceService = DeviceService(deviceRepository, groupRepository)
 }

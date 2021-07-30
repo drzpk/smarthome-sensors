@@ -24,7 +24,7 @@ class MeasurementFactory(private val deviceRepository: DeviceRepository) {
     fun create(input: CreateMeasurementsRequest.Measurement, loggerId: Int, now: Instant = Instant.now()): Measurement {
         val device = deviceRepository.findById(input.deviceId)
         validate(input, device, now)
-        return doBuild(input, now, loggerId)
+        return doBuild(input, now, loggerId, device?.group?.id!!)
     }
 
     private fun validate(input: CreateMeasurementsRequest.Measurement, device: Device?, now: Instant) {
@@ -72,11 +72,17 @@ class MeasurementFactory(private val deviceRepository: DeviceRepository) {
         validation.verify()
     }
 
-    private fun doBuild(input: CreateMeasurementsRequest.Measurement, now: Instant, loggerId: Int): Measurement {
+    private fun doBuild(
+        input: CreateMeasurementsRequest.Measurement,
+        now: Instant,
+        loggerId: Int,
+        groupId: Int
+    ): Measurement {
         val measurement = Measurement(
             getAbsoluteTime(now, input.timestampOffsetMillis),
             input.deviceId,
-            loggerId
+            loggerId,
+            groupId
         )
 
         return measurement.apply {

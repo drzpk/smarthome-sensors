@@ -48,8 +48,8 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should create measurements - positive case`() = runBlocking {
-        val measurement1 = getMeasurement()
-        val measurement2 = getMeasurement()
+        val measurement1 = getMeasurement(0)
+        val measurement2 = getMeasurement(0)
         whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
         val request = CreateMeasurementsRequest()
@@ -63,13 +63,13 @@ internal class MeasurementServiceTest {
         verify(measurementFactory, times(2)).create(any(), any(), any())
 
         taskSchedulerAction!!.invoke()
-        verifyMeasurementsSaved(measurement1, measurement2)
+        verifyMeasurementsSaved(Pair(0, listOf(measurement1, measurement2)))
     }
 
     @Test
     fun `should create measurements - duplicates`() = runBlocking {
-        val measurement1 = getMeasurement()
-        val measurement2 = getMeasurement()
+        val measurement1 = getMeasurement(0)
+        val measurement2 = getMeasurement(0)
         whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
         val request = CreateMeasurementsRequest()
@@ -81,10 +81,9 @@ internal class MeasurementServiceTest {
         then(status.total).isEqualTo(2)
         then(status.created).isEqualTo(1)
         then(status.duplicated).isEqualTo(1)
-        verify(measurementFactory, times(1)).create(any(), any(), any())
 
         taskSchedulerAction!!.invoke()
-        verifyMeasurementsSaved(measurement1)
+        verifyMeasurementsSaved(Pair(0, listOf(measurement1)))
     }
 
     @Test
@@ -123,7 +122,7 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should store measurements`() = runBlocking {
-        val measurement = getMeasurement()
+        val measurement = getMeasurement(0)
         whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement)
 
         val request = CreateMeasurementsRequest()
@@ -132,11 +131,11 @@ internal class MeasurementServiceTest {
         val service = getService()
 
         service.createMeasurements(request, getLogger())
-        verify(measurementRepository, times(0)).save(any())
+        verify(measurementRepository, times(0)).save(any(), any())
 
         taskSchedulerAction!!.invoke()
 
-        verifyMeasurementsSaved(measurement)
+        verifyMeasurementsSaved(Pair(0, listOf(measurement)))
 
         reset(measurementRepository)
         taskSchedulerAction!!.invoke()
@@ -144,16 +143,39 @@ internal class MeasurementServiceTest {
         verifyMeasurementsSaved()
     }
 
-    private suspend fun verifyMeasurementsSaved(vararg measurements: Measurement) {
-        val captor = argumentCaptor<Collection<Measurement>>()
-        verify(measurementRepository).save(captor.capture())
-        if (measurements.isNotEmpty())
-            then(captor.firstValue).containsExactly(*measurements)
-        else
-            then(captor.firstValue).isEmpty()
+    @Test
+    fun `should store measurements by groups`() = runBlocking {
+        val measurement1 = getMeasurement(0)
+        val measurement2 = getMeasurement(1)
+
+        whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+
+        val request = CreateMeasurementsRequest()
+        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement(2))
+
+        val service = getService()
+
+        service.createMeasurements(request, getLogger())
+        verify(measurementRepository, times(0)).save(any(), any())
+
+        taskSchedulerAction!!.invoke()
+
+        verifyMeasurementsSaved(Pair(0, listOf(measurement1)), Pair(1, listOf(measurement2)))
     }
 
-    private fun getMeasurement(): Measurement = Measurement(Instant.now(), 1, 2)
+    private suspend fun verifyMeasurementsSaved(vararg measurements: Pair<Int, Collection<Measurement>>) {
+        if (measurements.isNotEmpty()) {
+            measurements.forEach {
+                verify(measurementRepository).save(eq(it.first), eq(it.second))
+            }
+        }
+        else {
+            verify(measurementRepository, times(0)).save(any(), any())
+        }
+    }
+
+    private fun getMeasurement(groupId: Int): Measurement = Measurement(Instant.now(), 1, 2, groupId)
 
     private fun getRequestMeasurement(deviceId: Int): CreateMeasurementsRequest.Measurement {
         return CreateMeasurementsRequest.Measurement().apply {

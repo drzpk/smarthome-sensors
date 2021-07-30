@@ -6,5 +6,6 @@ interface DeviceRepository {
     fun findById(id: Int): Device?
     fun findByNameAndActive(name: String, active: Boolean): Device?
     fun findAll(active: Boolean? = null): Collection<Device>
+    fun countByGroupId(groupId: Int): Int
     fun save(device: Device)
 }

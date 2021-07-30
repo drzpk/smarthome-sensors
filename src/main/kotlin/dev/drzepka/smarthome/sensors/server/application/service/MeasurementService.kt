@@ -105,7 +105,15 @@ class MeasurementService(
             queue.clear()
             ret
         }
-        measurementRepository.save(clone)
+
+        clone.groupBy { it.groupId }
+            .forEach { group ->
+                try {
+                    measurementRepository.save(group.key, group.value)
+                } catch (e: Exception) {
+                    log.error("Error while storing {} measurements for group {}", group.value.size, group.key)
+                }
+            }
     }
 
     private data class MeasurementInfo(val deviceId: Int)
