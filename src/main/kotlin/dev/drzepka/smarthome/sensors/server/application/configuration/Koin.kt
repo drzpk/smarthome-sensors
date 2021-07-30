@@ -13,11 +13,10 @@ import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedGro
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedLoggerRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InfluxDBMeasurementRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.service.PBKDF2HashService
-import io.ktor.application.*
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-fun Application.sensorsServerKoinModule(): Module = module {
+fun sensorsServerKoinModule(): Module = module {
 
     // Application
     single { DeviceService(get(), get()) }
@@ -29,9 +28,9 @@ fun Application.sensorsServerKoinModule(): Module = module {
     single { MeasurementFactory(get()) }
 
     // Infrastructure
-    single(createdAtStart = true) { SQLDatabaseInitializer(environment.config) }
+    single(createdAtStart = true) { SQLDatabaseInitializer(get()) }
     single(createdAtStart = true) { InfluxDBDatabaseManager(get()) }
-    single { ConfigurationProviderService() }
+    single(createdAtStart = true) { ConfigurationProviderService() }
     single<HashService> { PBKDF2HashService() }
 
     single<DeviceRepository> { ExposedDeviceRepository(get()) }

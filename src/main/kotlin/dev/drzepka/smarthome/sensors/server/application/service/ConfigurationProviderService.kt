@@ -15,12 +15,11 @@ class ConfigurationProviderService {
     private val log by Logger()
 
     init {
-        val baseConfig = ConfigFactory.load()
-        val externalConfigFile = getExternalConfigFile()
+        val baseConfig = loadBaseConfiguration()
+        val externalConfig = loadExternalConfiguration()
 
-        config = if (externalConfigFile != null) {
-            log.info("Loading external configuration file $externalConfigFile")
-            ConfigFactory.parseFile(externalConfigFile).withFallback(baseConfig)
+        config = if (externalConfig != null) {
+            externalConfig.withFallback(baseConfig)
         } else {
             baseConfig
         }
@@ -36,13 +35,18 @@ class ConfigurationProviderService {
         return config.getInt(path)
     }
 
-    private fun getExternalConfigFile(): File? {
+    internal fun loadBaseConfiguration(): Config {
+        return ConfigFactory.load()
+    }
+
+    internal fun loadExternalConfiguration(): Config? {
         val path = System.getProperty("EXTERNAL_CONFIG_PATH") ?: return null
         val file = File(path)
         if (!file.isFile)
             throw IllegalArgumentException("Configuration file $path doesn't exist")
 
-        return file
+        log.info("Loading external configuration file $path")
+        return ConfigFactory.parseFile(file)
     }
 
     private fun reportPropertyNotFound(path: String): Nothing {

@@ -76,10 +76,11 @@ internal class DeviceServiceTest {
 
     @Test
     fun `should get device`() {
-        val activeDevice = Device(Group()).apply { id = 1; active = true }
+        val group = Group().apply { id = 1 }
+        val activeDevice = Device(group).apply { id = 1; active = true }
         whenever(deviceRepository.findById(1)).thenReturn(activeDevice)
 
-        val inactiveDevice = Device(Group()).apply { id = 2;active = false }
+        val inactiveDevice = Device(group).apply { id = 2;active = false }
         whenever(deviceRepository.findById(2)).thenReturn(inactiveDevice)
 
         val service = getService()
