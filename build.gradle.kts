@@ -2,6 +2,7 @@ plugins {
     application
     kotlin("jvm") version "1.5.20"
     kotlin("plugin.allopen") version "1.5.20"
+    id("com.google.cloud.tools.jib") version "3.1.2"
 }
 
 group = "dev.drzepka.smarthome"
@@ -76,4 +77,61 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+jib {
+    from {
+        image = "openjdk:8-jre-slim-buster"
+    }
+    to {
+        //image = "registry.gitlab.com/smart-home-dr/sensors/sensors"
+        image = "sensors"
+        tags = setOf(project.version as String)
+        auth {
+            username = "d_rzepka"
+            password = getContainerRegistryToken()
+        }
+    }
+    container {
+        entrypoint = listOf("sh",
+            "-c",
+            """
+                |java 
+                |-cp `cat /app/jib-classpath-file`
+                |-Dlogback.configurationFile=/app/config/logback.xml 
+                |-DEXTERNAL_CONFIG_PATH=/app/config/application.conf 
+                |${'$'}JAVA_OPTS 
+                |io.ktor.server.tomcat.EngineMain""".trimMargin().lines().joinToString(" ")
+        )
+
+        environment = mapOf(
+            "JAVA_OPTS" to ""
+        )
+        creationTime = "USE_CURRENT_TIMESTAMP"
+        workingDirectory = "/app"
+        labels.put("Maintainer", "dominik.1.rzepka@gmail.com")
+    }
+    extraDirectories {
+        paths {
+            path {
+                setFrom(File(buildDir, "libs"))
+                into = "/app"
+            }
+        }
+    }
+}
+
+fun getContainerRegistryToken(): String {
+    val ciToken = System.getenv("CI_JOB_TOKEN")
+    if (ciToken != null)
+        return ciToken
+
+    // from ~/.gradle/gradle.properties
+    val privateToken = findProperty("gitLabPrivateToken") as String?
+    return if (privateToken == null) {
+        logger.warn("Container registry token is missing, publishing will fail")
+        ""
+    } else {
+        privateToken
+    }
 }
