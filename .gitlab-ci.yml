@@ -23,6 +23,6 @@ docker:
   script:
     - chmod +x gradlew
     - ./gradlew jib
-#  only:
-#    - tags
+  only:
+    - tags
   when: manual
