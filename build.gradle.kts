@@ -84,12 +84,11 @@ jib {
         image = "openjdk:8-jre-slim-buster"
     }
     to {
-        //image = "registry.gitlab.com/smart-home-dr/sensors/sensors"
-        image = "sensors"
+        image = "registry.gitlab.com/smart-home-dr/sensors/sensors"
         tags = setOf(project.version as String)
         auth {
-            username = "d_rzepka"
-            password = getContainerRegistryToken()
+            username = getContainerRegistryUser()
+            password = getContainerRegistryPassword()
         }
     }
     container {
@@ -121,8 +120,16 @@ jib {
     }
 }
 
-fun getContainerRegistryToken(): String {
-    val ciToken = System.getenv("CI_JOB_TOKEN")
+fun getContainerRegistryUser(): String {
+    val user = System.getenv("CI_DEPLOY_USER")
+    if (user != null)
+        return user
+
+    return "d_rzepka"
+}
+
+fun getContainerRegistryPassword(): String {
+    val ciToken = System.getenv("CI_DEPLOY_PASSWORD")
     if (ciToken != null)
         return ciToken
 
