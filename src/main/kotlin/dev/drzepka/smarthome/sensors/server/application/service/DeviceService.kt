@@ -54,6 +54,8 @@ class DeviceService(private val deviceRepository: DeviceRepository, private val 
 
         request.name?.let { device.name = it }
         request.description?.let { device.description = it }
+        request.type?.let { device.type = it }
+        request.mac?.let { device.mac = it }
         request.groupId?.let {
             val group = groupRepository.findById(it) ?: throw NotFoundException("Group $it doesn't exist")
             device.group = group
