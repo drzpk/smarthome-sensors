@@ -1,5 +1,6 @@
 package dev.drzepka.smarthome.sensors.server
 
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupRouting
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupSecurity
@@ -14,6 +15,7 @@ import org.koin.ktor.ext.Koin
 fun Application.sensorsServer() {
     install(ContentNegotiation) {
         jackson {
+            enable(JsonParser.Feature.ALLOW_COMMENTS)
             registerModule(JavaTimeModule())
         }
     }
