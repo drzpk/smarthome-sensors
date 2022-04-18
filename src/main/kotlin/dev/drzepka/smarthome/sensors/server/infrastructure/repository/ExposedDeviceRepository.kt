@@ -52,6 +52,7 @@ class ExposedDeviceRepository(private val groupRepository: GroupRepository) : De
     private fun entityToRow(entity: Device, stmt: UpdateBuilder<Int>) {
         stmt[Devices.name] = entity.name
         stmt[Devices.description] = entity.description
+        stmt[Devices.type] = entity.type
         stmt[Devices.mac] = entity.mac
         stmt[Devices.createdAt] = entity.createdAt
         stmt[Devices.active] = entity.active
@@ -67,6 +68,7 @@ class ExposedDeviceRepository(private val groupRepository: GroupRepository) : De
             id = row[Devices.id].value
             name = row[Devices.name]
             description = row[Devices.description]
+            type = row[Devices.type]
             mac = row[Devices.mac]
             createdAt = row[Devices.createdAt]
             active = row[Devices.active]

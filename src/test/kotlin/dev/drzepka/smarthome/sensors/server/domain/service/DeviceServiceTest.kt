@@ -29,6 +29,7 @@ internal class DeviceServiceTest {
         val request = CreateDeviceRequest().apply {
             name = "name"
             description = "description"
+            type = "type"
             mac = "mac"
             groupId = 2
         }
@@ -43,6 +44,7 @@ internal class DeviceServiceTest {
 
         then(resource.name).isEqualTo(request.name)
         then(resource.description).isEqualTo(request.description)
+        then(resource.type).isEqualTo(request.type)
 
         val captor = argumentCaptor<Device>()
         verify(deviceRepository, times(1)).save(captor.capture())
@@ -50,6 +52,8 @@ internal class DeviceServiceTest {
         val entity = captor.firstValue
         then(entity.name).isEqualTo(request.name)
         then(entity.description).isEqualTo(request.description)
+        then(entity.type).isEqualTo(request.type)
+        then(entity.mac).isEqualTo(request.mac)
         then(entity.active).isTrue
     }
 
@@ -61,7 +65,7 @@ internal class DeviceServiceTest {
         then(caught).isInstanceOf(ValidationException::class.java)
 
         val validationException = caught as ValidationException
-        then(validationException.validationErrors.errors).hasSize(4)
+        then(validationException.validationErrors.errors).hasSize(5)
 
         val validationErrors = validationException.validationErrors.errors
         then(validationErrors[0]).isInstanceOf(FieldError::class.java)
@@ -69,9 +73,11 @@ internal class DeviceServiceTest {
         then(validationErrors[1]).isInstanceOf(FieldError::class.java)
         then((validationErrors[1] as FieldError).field).isEqualTo("description")
         then(validationErrors[2]).isInstanceOf(FieldError::class.java)
-        then((validationErrors[2] as FieldError).field).isEqualTo("mac")
+        then((validationErrors[2] as FieldError).field).isEqualTo("type")
         then(validationErrors[3]).isInstanceOf(FieldError::class.java)
-        then((validationErrors[3] as FieldError).field).isEqualTo("groupId")
+        then((validationErrors[3] as FieldError).field).isEqualTo("mac")
+        then(validationErrors[4]).isInstanceOf(FieldError::class.java)
+        then((validationErrors[4] as FieldError).field).isEqualTo("groupId")
     }
 
     @Test

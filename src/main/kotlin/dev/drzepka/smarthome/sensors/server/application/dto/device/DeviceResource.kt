@@ -8,6 +8,7 @@ class DeviceResource {
     var id = 0
     var name = ""
     var description = ""
+    var type = ""
     var mac = ""
     var createdAt: Instant = Instant.now()
     var group: GroupResource? = null
@@ -17,6 +18,7 @@ class DeviceResource {
             id = device.id!!
             name = device.name
             description = device.description
+            type = device.type
             mac = device.mac
             createdAt = device.createdAt
             group = device.group?.let { GroupResource.fromEntity(it) }

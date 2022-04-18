@@ -5,8 +5,12 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
 
-    <include file="db-changelog/001.init.xml"/>
-    <include file="db-changelog/002.groups.xml"/>
-    <include file="db-changelog/003.device-type.xml"/>
+    <changeSet id="003.device-type" author="Dominik Rzepka">
+        <addColumn tableName="devices">
+            <column name="type" type="varchar(64)" defaultValue="unknown" beforeColumn="mac">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>

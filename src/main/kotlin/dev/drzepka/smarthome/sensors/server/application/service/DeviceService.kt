@@ -31,6 +31,7 @@ class DeviceService(private val deviceRepository: DeviceRepository, private val 
         val device = Device(group!!).apply {
             name = request.name!!
             description = request.description!!
+            type = request.type!!
             mac = request.mac!!
             createdAt = Instant.now()
             active = true
@@ -83,6 +84,8 @@ class DeviceService(private val deviceRepository: DeviceRepository, private val 
             validation.addFieldError("name", "Name must have length between 1 and 64 characters.")
         if (request.description == null || request.description!!.isEmpty() || request.description!!.length > 256)
             validation.addFieldError("description", "Description must have length between 1 and 256 characters.")
+        if (request.type == null || request.type!!.isBlank() || request.type!!.length > 64)
+            validation.addFieldError("type", "Type must have length between 1 and 64 characters.")
         if (request.mac == null || request.mac!!.isBlank() || request.mac!!.length > 64)
             validation.addFieldError("mac", "Mac must have length between 1 and 64 characters.")
 
