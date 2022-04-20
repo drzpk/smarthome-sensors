@@ -7,8 +7,7 @@ import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
-import org.assertj.core.api.BDDAssertions.catchThrowable
-import org.assertj.core.api.BDDAssertions.then
+import org.assertj.core.api.BDDAssertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
@@ -47,6 +46,16 @@ class MeasurementFactoryTest {
         then(measurement.humidity).isEqualTo(BigDecimal("55.49"))
         then(measurement.batteryVoltage).isEqualTo(BigDecimal("3.192"))
         then(measurement.batteryLevel).isEqualTo(84)
+    }
+
+    @Test
+    fun `should build measurement without battery`() {
+        val request = createValidMeasurementRequest()
+        request.batteryVoltage = null
+        request.batteryLevel = null
+
+        assertThatNoException()
+            .isThrownBy { getBuilder().create(request, 3, Instant.now()) }
     }
 
     @Test

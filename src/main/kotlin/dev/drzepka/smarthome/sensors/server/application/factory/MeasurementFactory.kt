@@ -42,13 +42,13 @@ class MeasurementFactory(private val deviceRepository: DeviceRepository) {
                 "Humidity is out of allowed bounds: [$MIN_ALLOWED_HUMIDITY; $MAX_ALLOWED_HUMIDITY]"
             )
 
-        if (input.batteryLevel < MIN_ALLOWED_BATTERY_LEVEL || input.batteryLevel > MAX_ALLOWED_BATTERY_LEVEL)
+        if (input.batteryLevel != null && (input.batteryLevel!! < MIN_ALLOWED_BATTERY_LEVEL || input.batteryLevel!! > MAX_ALLOWED_BATTERY_LEVEL))
             validation.addFieldError(
                 "batteryLevel",
                 "Battery level is out of allowed bounds: [$MIN_ALLOWED_BATTERY_LEVEL; $MAX_ALLOWED_BATTERY_LEVEL]."
             )
 
-        if (input.batteryVoltage < MIN_ALLOWED_BATTERY_VOLTAGE || input.batteryVoltage > MAX_ALLOWED_BATTERY_VOLTAGE)
+        if (input.batteryVoltage != null && (input.batteryVoltage!! < MIN_ALLOWED_BATTERY_VOLTAGE || input.batteryVoltage!! > MAX_ALLOWED_BATTERY_VOLTAGE))
             validation.addFieldError(
                 "batteryVoltage",
                 "Battery voltage is out of allowed bounds: [$MIN_ALLOWED_BATTERY_VOLTAGE; $MAX_ALLOWED_BATTERY_VOLTAGE]."
@@ -88,7 +88,7 @@ class MeasurementFactory(private val deviceRepository: DeviceRepository) {
         return measurement.apply {
             temperature = normalizeNumber(input.temperature, 2)
             humidity = normalizeNumber(input.humidity, 2)
-            batteryVoltage = normalizeNumber(input.batteryVoltage, 3)
+            batteryVoltage = input.batteryVoltage?.let { normalizeNumber(it, 3) }
             batteryLevel = input.batteryLevel
         }
     }
