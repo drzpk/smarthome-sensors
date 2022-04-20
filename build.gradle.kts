@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "dev.drzepka.smarthome"
-version = "1.0.0"
+version = "1.1.0"
 
 val logback_version: String by project
 val ktor_version: String by project
