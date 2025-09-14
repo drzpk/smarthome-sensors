@@ -1,3 +1,6 @@
+import com.google.cloud.tools.jib.api.Jib
+import com.google.cloud.tools.jib.gradle.JibTask
+
 plugins {
     application
     kotlin("jvm") version "2.2.20"
@@ -6,7 +9,7 @@ plugins {
 }
 
 group = "dev.drzepka.smarthome"
-version = "1.2.0"
+version = "1.2.1"
 
 val logback_version: String by project
 val ktor_version: String by project
@@ -76,6 +79,10 @@ configurations {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.withType<JibTask> {
+    dependsOn(tasks.named("build"))
 }
 
 jib {
