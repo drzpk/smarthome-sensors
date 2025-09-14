@@ -24,7 +24,7 @@ class SQLDatabaseInitializer(config: ConfigurationProviderService) {
         val liquibaseDatabase =
             DatabaseFactory.getInstance().findCorrectDatabaseImplementation(JdbcConnection(dataSource.connection))
         val liquibase =
-            Liquibase("classpath:/liquibase-changelog.xml", ClassLoaderResourceAccessor(), liquibaseDatabase)
+            Liquibase("liquibase-changelog.xml", ClassLoaderResourceAccessor(), liquibaseDatabase)
         liquibase.update(Contexts(), LabelExpression())
 
         log.info("Creating the SQL database connection")

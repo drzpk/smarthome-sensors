@@ -23,8 +23,7 @@ kotlin {
 
 repositories {
     mavenLocal()
-    jcenter()
-    maven { url = uri("https://kotlin.bintray.com/ktor") }
+    mavenCentral()
 }
 
 dependencies {
@@ -45,18 +44,18 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("mysql:mysql-connector-java:8.0.19")
-    implementation("com.zaxxer:HikariCP:3.4.2")
-    implementation("org.liquibase:liquibase-core:4.3.2")
+    implementation("com.zaxxer:HikariCP:7.0.2")
+    implementation("org.liquibase:liquibase-core:4.33.0")
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.10.2")
-    implementation("com.influxdb:influxdb-client-kotlin:2.3.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0")
+    implementation("com.influxdb:influxdb-client-kotlin:7.3.0")
     implementation("com.typesafe:config:1.4.1")
+    runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.5.6")
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("com.h2database:h2:1.3.176")
+    testRuntimeOnly("com.h2database:h2:2.3.232")
     testImplementation("org.assertj:assertj-core:3.19.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("io.insert-koin:koin-test:$koinVersion")
@@ -81,7 +80,7 @@ tasks.withType<Test> {
 
 jib {
     from {
-        image = "openjdk:8-jre-slim-buster"
+        image = "eclipse-temurin:21-jre"
     }
     to {
         image = "registry.gitlab.com/smart-home-dr/sensors/sensors"
