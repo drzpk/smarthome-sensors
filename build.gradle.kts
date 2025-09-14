@@ -112,7 +112,7 @@ jib {
     extraDirectories {
         paths {
             path {
-                setFrom(File(buildDir, "libs"))
+                setFrom(File(layout.buildDirectory.get().asFile, "libs"))
                 into = "/app"
             }
         }

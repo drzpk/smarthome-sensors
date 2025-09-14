@@ -22,7 +22,7 @@ docker:
   stage: publish
   script:
     - chmod +x gradlew
-    - ./gradlew jib
+    - ./gradlew assemble jib
   only:
     - tags
   when: manual
