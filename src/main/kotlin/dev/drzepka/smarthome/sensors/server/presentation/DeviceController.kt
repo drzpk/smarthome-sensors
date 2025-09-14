@@ -3,11 +3,15 @@ package dev.drzepka.smarthome.sensors.server.presentation
 import dev.drzepka.smarthome.sensors.server.application.dto.device.CreateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.device.UpdateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.service.DeviceService
-import io.ktor.application.*
 import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.koin.ktor.ext.get
 

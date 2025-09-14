@@ -3,10 +3,11 @@ package dev.drzepka.smarthome.sensors.server.application.configuration
 import dev.drzepka.smarthome.sensors.server.application.handler.ValidationExceptionHandler
 import dev.drzepka.smarthome.sensors.server.domain.exception.NotFoundException
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
-import io.ktor.application.*
-import io.ktor.features.*
 import io.ktor.http.*
-import io.ktor.response.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
 import org.slf4j.LoggerFactory
 
 fun Application.setupStatusPages() {
@@ -15,7 +16,7 @@ fun Application.setupStatusPages() {
 
         val validationExceptionHandler = ValidationExceptionHandler()
 
-        exception<ValidationException> { cause ->
+        exception<ValidationException> { call, cause ->
             val result = validationExceptionHandler.handle(cause)
             if (result.body != null)
                 call.respond(result.statusCode, result.body)
@@ -23,14 +24,14 @@ fun Application.setupStatusPages() {
                 call.respond(result.statusCode)
         }
 
-        exception<NotFoundException> { cause ->
+        exception<NotFoundException> { call, cause ->
             if (cause.message != null)
-                call.respond(HttpStatusCode.NotFound, ErrorDetails(cause.message))
+                call.respond(HttpStatusCode.NotFound, ErrorDetails(cause.message!!))
             else
                 call.respond(HttpStatusCode.NotFound)
         }
 
-        exception<Exception> { cause ->
+        exception<Exception> { call, cause ->
             log.error("Unhandled exception", cause)
             call.respond(HttpStatusCode.InternalServerError)
         }

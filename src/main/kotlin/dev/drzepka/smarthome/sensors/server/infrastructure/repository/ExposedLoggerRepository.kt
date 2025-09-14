@@ -9,24 +9,23 @@ import org.jetbrains.exposed.sql.statements.UpdateBuilder
 class ExposedLoggerRepository : LoggerRepository {
 
     override fun findById(id: Int): Logger? {
-        return Loggers.select { Loggers.id eq id }
+        return Loggers.selectAll()
+            .where { Loggers.id eq id }
             .firstOrNull()
             ?.let { rowToEntity(it) }
     }
 
     override fun findByNameAndActive(name: String, active: Boolean): Logger? {
-        return Loggers.select { (Loggers.name eq name) and (Loggers.active eq active) }
+        return Loggers.selectAll()
+            .where { (Loggers.name eq name) and (Loggers.active eq active) }
             .firstOrNull()
             ?.let { rowToEntity(it) }
     }
 
     override fun findAll(active: Boolean?): Collection<Logger> {
-        val query = if (active != null)
-            Loggers.select { Loggers.active eq active }
-        else
-            Loggers.selectAll()
-
-        return query.map { rowToEntity(it) }
+        return Loggers.selectAll()
+            .where { if (active != null) Loggers.active eq active else Op.TRUE }
+            .map { rowToEntity(it) }
     }
 
     override fun save(logger: Logger) {

@@ -2,8 +2,10 @@ package dev.drzepka.smarthome.sensors.server.application.configuration
 
 import dev.drzepka.smarthome.sensors.server.application.LoggerPrincipal
 import dev.drzepka.smarthome.sensors.server.application.service.LoggerService
-import io.ktor.application.*
-import io.ktor.auth.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.basic
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.koin.ktor.ext.get
 

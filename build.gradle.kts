@@ -1,12 +1,12 @@
 plugins {
     application
-    kotlin("jvm") version "1.5.20"
-    kotlin("plugin.allopen") version "1.5.20"
-    id("com.google.cloud.tools.jib") version "3.1.2"
+    kotlin("jvm") version "2.2.20"
+    kotlin("plugin.allopen") version "2.2.20"
+    id("com.google.cloud.tools.jib") version "3.4.5"
 }
 
 group = "dev.drzepka.smarthome"
-version = "1.1.0"
+version = "1.2.0"
 
 val logback_version: String by project
 val ktor_version: String by project
@@ -14,7 +14,11 @@ val kotlin_version: String by project
 
 
 application {
-    mainClassName = "io.ktor.server.tomcat.EngineMain"
+    mainClass.set("io.ktor.server.tomcat.EngineMain")
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 repositories {
@@ -31,8 +35,10 @@ dependencies {
     implementation("io.ktor:ktor-server-tomcat:$ktor_version")
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-server-sessions:$ktor_version")
-    implementation("io.ktor:ktor-jackson:$ktor_version")
-    implementation("io.ktor:ktor-auth:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
+    implementation("io.ktor:ktor-server-status-pages:$ktor_version")
+    implementation("io.ktor:ktor-serialization-jackson-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-auth-jvm:$ktor_version")
     implementation("io.insert-koin:koin-core:$koinVersion")
     implementation("io.insert-koin:koin-ktor:$koinVersion")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
@@ -47,16 +53,16 @@ dependencies {
     implementation("com.influxdb:influxdb-client-kotlin:2.3.0")
     implementation("com.typesafe:config:1.4.1")
 
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly("com.h2database:h2:1.3.176")
     testImplementation("org.assertj:assertj-core:3.19.0")
-    testImplementation("io.ktor:ktor-server-tests:$ktor_version")
+    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("io.insert-koin:koin-test:$koinVersion")
-    testImplementation("org.mockito:mockito-core:3.9.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:3.9.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:3.1.0")
+    testImplementation("org.mockito:mockito-core:5.19.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
 }
 
 allOpen {
@@ -66,12 +72,6 @@ allOpen {
 configurations {
     all {
         exclude(group = "junit")
-    }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "1.8"
     }
 }
 

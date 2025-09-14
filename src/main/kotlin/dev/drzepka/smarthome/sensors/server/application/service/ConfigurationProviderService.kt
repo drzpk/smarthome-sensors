@@ -10,7 +10,7 @@ import java.io.File
 @Mockable
 class ConfigurationProviderService {
 
-    val config: Config
+    final val config: Config
 
     private val log by Logger()
 

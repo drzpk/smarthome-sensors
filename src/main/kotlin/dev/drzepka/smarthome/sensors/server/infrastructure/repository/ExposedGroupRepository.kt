@@ -4,6 +4,7 @@ import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import dev.drzepka.smarthome.sensors.server.domain.repository.GroupRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.table.Groups
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
 class ExposedGroupRepository : GroupRepository {
@@ -14,13 +15,15 @@ class ExposedGroupRepository : GroupRepository {
     }
 
     override fun findById(id: Int): Group? {
-        return Groups.select { Groups.id eq id }
+        return Groups.selectAll()
+            .where { Groups.id eq id }
             .firstOrNull()
             ?.let { rowToEntity(it) }
     }
 
     override fun findByName(name: String): Group? {
-        return Groups.select { Groups.name eq name }
+        return Groups.selectAll()
+            .where { Groups.name eq name }
             .firstOrNull()
             ?.let { rowToEntity(it) }
     }

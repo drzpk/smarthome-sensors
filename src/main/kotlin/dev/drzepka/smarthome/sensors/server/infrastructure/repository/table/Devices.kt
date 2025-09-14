@@ -1,7 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.infrastructure.repository.table
 
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.`java-time`.timestamp
+import org.jetbrains.exposed.sql.javatime.timestamp
 
 object Devices : IntIdTable("devices") {
     val name = varchar("name", 64)
@@ -10,5 +10,5 @@ object Devices : IntIdTable("devices") {
     val mac = varchar("mac", 64)
     val createdAt = timestamp("created_at")
     val active = bool("active")
-    val groupId = reference("group_id", Groups.id)
+    val groupId = optReference("group_id", Groups.id)
 }

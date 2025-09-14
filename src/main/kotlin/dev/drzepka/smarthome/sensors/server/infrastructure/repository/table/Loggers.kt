@@ -1,7 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.infrastructure.repository.table
 
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.`java-time`.timestamp
+import org.jetbrains.exposed.sql.javatime.timestamp
 
 object Loggers : IntIdTable("loggers") {
     val name = varchar("name", 64)
