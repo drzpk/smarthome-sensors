@@ -65,6 +65,12 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.19.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
+    testImplementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
+    val testcontainersVersion = "2.0.4"
+    testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:$testcontainersVersion")
+    testImplementation("org.testcontainers:testcontainers-influxdb:$testcontainersVersion")
+    // Required at compile time: Testcontainers' GenericContainer implements JUnit 4's TestRule
 }
 
 allOpen {

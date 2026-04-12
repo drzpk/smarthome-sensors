@@ -1,6 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.presentation
 
 import dev.drzepka.smarthome.sensors.server.application.dto.logger.CreateLoggerRequest
+import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResource
 import dev.drzepka.smarthome.sensors.server.application.dto.logger.UpdateLoggerRequest
 import dev.drzepka.smarthome.sensors.server.application.service.LoggerService
 import io.ktor.http.*
@@ -31,7 +32,7 @@ fun Route.loggerController() {
             val loggerId = call.parameters["loggerId"]!!.toInt()
 
             val resource = transaction {
-                loggerService.getLogger(loggerId)
+                LoggerResource.fromEntity(loggerService.getLogger(loggerId))
             }
 
             call.respond(resource)
