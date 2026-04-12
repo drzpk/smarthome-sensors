@@ -1,7 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.application.service
 
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
 import dev.drzepka.smarthome.sensors.server.application.util.LifespanTracker
 import dev.drzepka.smarthome.sensors.server.application.util.describeErrors
@@ -32,7 +32,7 @@ class MeasurementService(
 
     // todo: stats per time interval and per device (DeviceStatsService?)
     fun createMeasurements(
-        request: CreateMeasurementsRequest,
+        request: CreateMeasurementsRequestV2,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): CreateMeasurementsResponse {
         val response = CreateMeasurementsResponse()
@@ -56,7 +56,7 @@ class MeasurementService(
     // two loggers post new measurements simultaneously
     @Synchronized
     private fun addMeasurement(
-        single: CreateMeasurementsRequest.Measurement,
+        single: CreateMeasurementsRequestV2.Measurement,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): Boolean? {
         return try {
@@ -65,7 +65,7 @@ class MeasurementService(
             val errors = e.validationErrors
                 .describeErrors()
                 .joinToString("\n") { "    - $it" }
-            log.error("Mesurement {} didn't pass validation. \n  Errors: \n{}", single, errors)
+            log.error("Measurement {} didn't pass validation. \n  Errors: \n{}", single, errors)
             null
         } catch (e: Exception) {
             log.error("Error while creating measurement {}", single, e)
@@ -74,7 +74,7 @@ class MeasurementService(
     }
 
     private fun doAddMeasurement(
-        single: CreateMeasurementsRequest.Measurement,
+        single: CreateMeasurementsRequestV2.Measurement,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): Boolean {
 

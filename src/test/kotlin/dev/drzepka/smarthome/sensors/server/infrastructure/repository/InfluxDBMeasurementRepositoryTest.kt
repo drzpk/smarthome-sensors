@@ -21,11 +21,19 @@ internal class InfluxDBMeasurementRepositoryTest {
 
     @Test
     fun `should save measurements`() = runBlocking {
-        val measurement = Measurement(Instant.now(), 1, 2, 3)
-        measurement.temperature = BigDecimal("23.12")
-        measurement.humidity = BigDecimal("70.40")
-        measurement.batteryVoltage = BigDecimal("3.122")
-        measurement.batteryLevel = 92
+        val measurement = Measurement(
+            createdAt = Instant.now(),
+            deviceId = 1,
+            loggerId = 2,
+            groupId = 0,
+            type = "temperature",
+            fields = mapOf(
+                "temperature" to BigDecimal("23.12"),
+                "humidity" to BigDecimal("70.40"),
+                "battery_voltage" to BigDecimal("3.122"),
+                "battery_level" to 92
+            )
+        )
 
         getRepository().save(0, listOf(measurement))
 

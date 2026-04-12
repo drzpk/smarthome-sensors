@@ -2,7 +2,8 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.FieldError
 import dev.drzepka.smarthome.sensors.server.application.ObjectError
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureDataDTO
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
@@ -36,61 +37,61 @@ class MeasurementFactoryTest {
         val loggerId = 2
         val request = createValidMeasurementRequest()
 
-        val measurement = getBuilder().create(request, loggerId, now)
+        val measurement = getFactory().create(request, loggerId, now)
 
         then(measurement.createdAt).isEqualTo(now.minusMillis(200))
         then(measurement.deviceId).isEqualTo(1)
         then(measurement.loggerId).isEqualTo(2)
         then(measurement.groupId).isEqualTo(1)
-        then(measurement.temperature).isEqualTo(BigDecimal("21.21"))
-        then(measurement.humidity).isEqualTo(BigDecimal("55.49"))
-        then(measurement.batteryVoltage).isEqualTo(BigDecimal("3.192"))
-        then(measurement.batteryLevel).isEqualTo(84)
+        then(measurement.type).isEqualTo("temperature")
+        then(measurement.fields["temperature"]).isEqualTo(BigDecimal("21.21"))
+        then(measurement.fields["humidity"]).isEqualTo(BigDecimal("55.49"))
+        then(measurement.fields["battery_voltage"]).isEqualTo(BigDecimal("3.192"))
+        then(measurement.fields["battery_level"]).isEqualTo(84)
     }
 
     @Test
     fun `should build measurement without battery`() {
         val request = createValidMeasurementRequest()
-        request.batteryVoltage = null
-        request.batteryLevel = null
+        request.data = (request.data as TemperatureDataDTO).copy(batteryVoltage = null, batteryLevel = null)
 
         assertThatNoException()
-            .isThrownBy { getBuilder().create(request, 3, Instant.now()) }
+            .isThrownBy { getFactory().create(request, 3, Instant.now()) }
     }
 
     @Test
     fun `should validate temperature`() {
         val request = createValidMeasurementRequest()
-        request.temperature = BigDecimal(-100)
+        request.data = (request.data as TemperatureDataDTO).copy(temperature = BigDecimal(-100))
         assertFieldError("temperature") {
-            getBuilder().create(request, 1)
+            getFactory().create(request, 1)
         }
     }
 
     @Test
     fun `should validate humidity`() {
         val request = createValidMeasurementRequest()
-        request.humidity = BigDecimal(101)
+        request.data = (request.data as TemperatureDataDTO).copy(humidity = BigDecimal(101))
         assertFieldError("humidity") {
-            getBuilder().create(request, 1)
+            getFactory().create(request, 1)
         }
     }
 
     @Test
     fun `should validate battery voltage`() {
         val request = createValidMeasurementRequest()
-        request.batteryVoltage = BigDecimal("9.1")
+        request.data = (request.data as TemperatureDataDTO).copy(batteryVoltage = BigDecimal("9.1"))
         assertFieldError("batteryVoltage") {
-            getBuilder().create(request, 1)
+            getFactory().create(request, 1)
         }
     }
 
     @Test
     fun `should validate battery level`() {
         val request = createValidMeasurementRequest()
-        request.batteryLevel = -1
+        request.data = (request.data as TemperatureDataDTO).copy(batteryLevel = -1)
         assertFieldError("batteryLevel") {
-            getBuilder().create(request, 1)
+            getFactory().create(request, 1)
         }
     }
 
@@ -99,7 +100,7 @@ class MeasurementFactoryTest {
         val request = createValidMeasurementRequest()
         request.deviceId = 9999
         assertFieldError("deviceId") {
-            getBuilder().create(request, 1)
+            getFactory().create(request, 1)
         }
     }
 
@@ -108,7 +109,7 @@ class MeasurementFactoryTest {
         val request = createValidMeasurementRequest()
         request.timestampOffsetMillis = -1
         assertFieldError("timestampOffsetMillis") {
-            getBuilder().create(request, 1)
+            getFactory().create(request, 1)
         }
     }
 
@@ -117,18 +118,20 @@ class MeasurementFactoryTest {
         val request = createValidMeasurementRequest()
         request.timestampOffsetMillis = Duration.ofHours(25).toMillis()
         assertObjectError("Cannot create measurements older than") {
-            getBuilder().create(request, 1)
+            getFactory().create(request, 1)
         }
     }
 
-    private fun createValidMeasurementRequest(): CreateMeasurementsRequest.Measurement {
-        return CreateMeasurementsRequest.Measurement().apply {
+    private fun createValidMeasurementRequest(): CreateMeasurementsRequestV2.Measurement {
+        return CreateMeasurementsRequestV2.Measurement().apply {
             deviceId = 1
-            temperature = BigDecimal("21.211")
-            humidity = BigDecimal("55.489")
-            batteryVoltage = BigDecimal("3.1921")
-            batteryLevel = 84
             timestampOffsetMillis = 200
+            data = TemperatureDataDTO(
+                temperature = BigDecimal("21.211"),
+                humidity = BigDecimal("55.489"),
+                batteryVoltage = BigDecimal("3.1921"),
+                batteryLevel = 84
+            )
         }
     }
 
@@ -138,10 +141,10 @@ class MeasurementFactoryTest {
 
         val validationException = throwable as ValidationException
 
-        val hasFieldErrror = validationException.validationErrors.errors
+        val hasFieldError = validationException.validationErrors.errors
             .any { it is FieldError && it.field == fieldName }
 
-        then(hasFieldErrror)
+        then(hasFieldError)
             .withFailMessage("Field error '$fieldName' wasn't found")
     }
 
@@ -159,5 +162,5 @@ class MeasurementFactoryTest {
             .withFailMessage("Object error with message containing '$messageContains' wasn't found")
     }
 
-    private fun getBuilder(): MeasurementFactory = MeasurementFactory(deviceRepository)
+    private fun getFactory(): MeasurementFactory = MeasurementFactory(deviceRepository)
 }

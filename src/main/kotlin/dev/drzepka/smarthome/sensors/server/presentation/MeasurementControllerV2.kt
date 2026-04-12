@@ -2,9 +2,7 @@ package dev.drzepka.smarthome.sensors.server.presentation
 
 import dev.drzepka.smarthome.sensors.server.application.LoggerPrincipal
 import dev.drzepka.smarthome.sensors.server.application.configuration.MEASUREMENTS_AUTH
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureDataDTO
 import dev.drzepka.smarthome.sensors.server.application.service.MeasurementService
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.authentication
@@ -16,38 +14,21 @@ import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.koin.ktor.ext.get
 
-fun Route.measurementController() {
+fun Route.measurementControllerV2() {
 
     val measurementService = get<MeasurementService>()
 
-    route("/measurements") {
+    route("/v2/measurements") {
         authenticate(MEASUREMENTS_AUTH) {
             post {
-                val request = call.receive<CreateMeasurementsRequest>()
+                val request = call.receive<CreateMeasurementsRequestV2>()
                 val principal = call.authentication.principal<LoggerPrincipal>()!!
                 val status = transaction {
-                    measurementService.createMeasurements(request.toV2(), principal.logger)
+                    measurementService.createMeasurements(request, principal.logger)
                 }
 
                 call.respond(status)
             }
         }
     }
-}
-
-private fun CreateMeasurementsRequest.toV2(): CreateMeasurementsRequestV2 {
-    val v2 = CreateMeasurementsRequestV2()
-    v2.measurements = measurements.mapTo(ArrayList()) { m ->
-        CreateMeasurementsRequestV2.Measurement().apply {
-            deviceId = m.deviceId
-            timestampOffsetMillis = m.timestampOffsetMillis
-            data = TemperatureDataDTO(
-                temperature = m.temperature,
-                humidity = m.humidity,
-                batteryVoltage = m.batteryVoltage,
-                batteryLevel = m.batteryLevel
-            )
-        }
-    }
-    return v2
 }

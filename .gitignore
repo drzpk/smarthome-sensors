@@ -6,3 +6,5 @@ build/
 /tomcat.*/
 /logs/
 /.sessions/
+
+.claude/settings.local.json

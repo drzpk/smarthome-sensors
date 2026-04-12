@@ -20,13 +20,13 @@ abstract class AbstractDatabaseTest {
     protected val database = Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;IGNORECASE=true;")
 
     @BeforeEach
-    private fun setupBeforeEach() {
+    fun setupBeforeEach() {
         if (recreateDatabaseBeforeEach)
             setupDatabse()
     }
 
     @BeforeAll
-    private fun setupBeforeAll() {
+    fun setupBeforeAll() {
         if (!recreateDatabaseBeforeEach)
             setupDatabse()
     }
@@ -39,7 +39,7 @@ abstract class AbstractDatabaseTest {
     }
 
     @AfterAll
-    private fun clearDatabase() {
+    fun clearDatabase() {
         TransactionManager.closeAndUnregister(database)
     }
 }

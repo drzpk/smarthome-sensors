@@ -1,7 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.domain.service
 
 import dev.drzepka.smarthome.sensors.server.application.ValidationErrors
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
 import dev.drzepka.smarthome.sensors.server.application.service.ConfigurationProviderService
 import dev.drzepka.smarthome.sensors.server.application.service.MeasurementService
@@ -52,7 +52,7 @@ internal class MeasurementServiceTest {
         val measurement2 = getMeasurement(0)
         whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
-        val request = CreateMeasurementsRequest()
+        val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
         request.measurements.add(getRequestMeasurement(2))
 
@@ -72,7 +72,7 @@ internal class MeasurementServiceTest {
         val measurement2 = getMeasurement(0)
         whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
-        val request = CreateMeasurementsRequest()
+        val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
         request.measurements.add(getRequestMeasurement(1))
 
@@ -90,7 +90,7 @@ internal class MeasurementServiceTest {
     fun `should create measurements - validation errors`() = runBlocking {
         whenever(measurementFactory.create(any(), any(), any())).thenThrow(ValidationException(ValidationErrors()))
 
-        val request = CreateMeasurementsRequest()
+        val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
 
         val status = getService().createMeasurements(request, getLogger())
@@ -108,7 +108,7 @@ internal class MeasurementServiceTest {
             measurementFactory.create(any(), any(), any())
         ).thenThrow(IllegalStateException("something bad happened"))
 
-        val request = CreateMeasurementsRequest()
+        val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
 
         val status = getService().createMeasurements(request, getLogger())
@@ -125,7 +125,7 @@ internal class MeasurementServiceTest {
         val measurement = getMeasurement(0)
         whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement)
 
-        val request = CreateMeasurementsRequest()
+        val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
 
         val service = getService()
@@ -150,7 +150,7 @@ internal class MeasurementServiceTest {
 
         whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
-        val request = CreateMeasurementsRequest()
+        val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
         request.measurements.add(getRequestMeasurement(2))
 
@@ -175,10 +175,11 @@ internal class MeasurementServiceTest {
         }
     }
 
-    private fun getMeasurement(groupId: Int): Measurement = Measurement(Instant.now(), 1, 2, groupId)
+    private fun getMeasurement(groupId: Int): Measurement =
+        Measurement(Instant.now(), 1, 2, groupId, "temperature", emptyMap())
 
-    private fun getRequestMeasurement(deviceId: Int): CreateMeasurementsRequest.Measurement {
-        return CreateMeasurementsRequest.Measurement().apply {
+    private fun getRequestMeasurement(deviceId: Int): CreateMeasurementsRequestV2.Measurement {
+        return CreateMeasurementsRequestV2.Measurement().apply {
             this.deviceId = deviceId
         }
     }

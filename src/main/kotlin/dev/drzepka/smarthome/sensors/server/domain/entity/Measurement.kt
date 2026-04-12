@@ -1,11 +1,12 @@
 package dev.drzepka.smarthome.sensors.server.domain.entity
 
-import java.math.BigDecimal
 import java.time.Instant
 
-class Measurement(var createdAt: Instant, var deviceId: Int, var loggerId: Int, var groupId: Int) {
-    var temperature: BigDecimal = BigDecimal.ZERO
-    var humidity: BigDecimal = BigDecimal.ZERO
-    var batteryVoltage: BigDecimal? = null
-    var batteryLevel: Int? = null
-}
+class Measurement(
+    val createdAt: Instant,
+    val deviceId: Int,
+    val loggerId: Int,
+    val groupId: Int,
+    val type: String,
+    val fields: Map<String, Number?>
+)
