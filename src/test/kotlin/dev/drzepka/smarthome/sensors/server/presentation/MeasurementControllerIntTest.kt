@@ -9,7 +9,7 @@ import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResourc
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureDataDTO
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureData
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -76,7 +76,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
             setBody(CreateMeasurementsRequestV2().apply {
                 measurements.add(CreateMeasurementsRequestV2.Measurement().apply {
                     this.deviceId = deviceId
-                    data = TemperatureDataDTO(
+                    data = TemperatureData(
                         temperature = BigDecimal("21.0"),
                         humidity = BigDecimal("55.0"),
                         batteryVoltage = BigDecimal("3.7"),
@@ -102,7 +102,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
             setBody(CreateMeasurementsRequestV2().apply {
                 measurements.add(CreateMeasurementsRequestV2.Measurement().apply {
                     this.deviceId = deviceId
-                    data = TemperatureDataDTO(
+                    data = TemperatureData(
                         temperature = BigDecimal("999.0"),  // out of range
                         humidity = BigDecimal("55.0")
                     )

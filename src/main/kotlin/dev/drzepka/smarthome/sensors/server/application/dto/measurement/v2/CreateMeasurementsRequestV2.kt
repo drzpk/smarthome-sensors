@@ -10,7 +10,7 @@ class CreateMeasurementsRequestV2 {
     class Measurement {
         var deviceId = 0
         var timestampOffsetMillis: Long = 0
-        lateinit var data: MeasurementDataDTO
+        lateinit var data: MeasurementData
 
         override fun toString(): String =
             "Measurement(deviceId=$deviceId, timestampOffsetMillis=$timestampOffsetMillis, data=$data)"
@@ -19,13 +19,13 @@ class CreateMeasurementsRequestV2 {
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
-    JsonSubTypes.Type(value = TemperatureDataDTO::class, name = "temperature")
+    JsonSubTypes.Type(value = TemperatureData::class, name = "temperature")
 )
-sealed class MeasurementDataDTO
+sealed class MeasurementData
 
-data class TemperatureDataDTO(
+data class TemperatureData(
     val temperature: BigDecimal = BigDecimal.ZERO,
     val humidity: BigDecimal = BigDecimal.ZERO,
     val batteryVoltage: BigDecimal? = null,
     val batteryLevel: Int? = null
-) : MeasurementDataDTO()
+) : MeasurementData()

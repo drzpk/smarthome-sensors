@@ -3,7 +3,7 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 import dev.drzepka.smarthome.sensors.server.application.FieldError
 import dev.drzepka.smarthome.sensors.server.application.ObjectError
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureDataDTO
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureData
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
@@ -53,7 +53,7 @@ class MeasurementFactoryTest {
     @Test
     fun `should build measurement without battery`() {
         val request = createValidMeasurementRequest()
-        request.data = (request.data as TemperatureDataDTO).copy(batteryVoltage = null, batteryLevel = null)
+        request.data = (request.data as TemperatureData).copy(batteryVoltage = null, batteryLevel = null)
 
         assertThatNoException()
             .isThrownBy { getFactory().create(request, 3, Instant.now()) }
@@ -62,7 +62,7 @@ class MeasurementFactoryTest {
     @Test
     fun `should validate temperature`() {
         val request = createValidMeasurementRequest()
-        request.data = (request.data as TemperatureDataDTO).copy(temperature = BigDecimal(-100))
+        request.data = (request.data as TemperatureData).copy(temperature = BigDecimal(-100))
         assertFieldError("temperature") {
             getFactory().create(request, 1)
         }
@@ -71,7 +71,7 @@ class MeasurementFactoryTest {
     @Test
     fun `should validate humidity`() {
         val request = createValidMeasurementRequest()
-        request.data = (request.data as TemperatureDataDTO).copy(humidity = BigDecimal(101))
+        request.data = (request.data as TemperatureData).copy(humidity = BigDecimal(101))
         assertFieldError("humidity") {
             getFactory().create(request, 1)
         }
@@ -80,7 +80,7 @@ class MeasurementFactoryTest {
     @Test
     fun `should validate battery voltage`() {
         val request = createValidMeasurementRequest()
-        request.data = (request.data as TemperatureDataDTO).copy(batteryVoltage = BigDecimal("9.1"))
+        request.data = (request.data as TemperatureData).copy(batteryVoltage = BigDecimal("9.1"))
         assertFieldError("batteryVoltage") {
             getFactory().create(request, 1)
         }
@@ -89,7 +89,7 @@ class MeasurementFactoryTest {
     @Test
     fun `should validate battery level`() {
         val request = createValidMeasurementRequest()
-        request.data = (request.data as TemperatureDataDTO).copy(batteryLevel = -1)
+        request.data = (request.data as TemperatureData).copy(batteryLevel = -1)
         assertFieldError("batteryLevel") {
             getFactory().create(request, 1)
         }
@@ -126,7 +126,7 @@ class MeasurementFactoryTest {
         return CreateMeasurementsRequestV2.Measurement().apply {
             deviceId = 1
             timestampOffsetMillis = 200
-            data = TemperatureDataDTO(
+            data = TemperatureData(
                 temperature = BigDecimal("21.211"),
                 humidity = BigDecimal("55.489"),
                 batteryVoltage = BigDecimal("3.1921"),

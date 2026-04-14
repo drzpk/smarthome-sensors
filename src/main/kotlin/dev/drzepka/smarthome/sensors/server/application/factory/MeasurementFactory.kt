@@ -2,7 +2,7 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.ValidationErrors
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureDataDTO
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureData
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
@@ -20,7 +20,7 @@ class MeasurementFactory(private val deviceRepository: DeviceRepository) {
         validateCommon(input, device, now)
 
         val (type, fields) = when (val data = input.data) {
-            is TemperatureDataDTO -> "temperature" to buildTemperatureFields(data)
+            is TemperatureData -> "temperature" to buildTemperatureFields(data)
         }
 
         return Measurement(
@@ -51,7 +51,7 @@ class MeasurementFactory(private val deviceRepository: DeviceRepository) {
         validation.verify()
     }
 
-    private fun buildTemperatureFields(data: TemperatureDataDTO): Map<String, Number?> {
+    private fun buildTemperatureFields(data: TemperatureData): Map<String, Number?> {
         val validation = ValidationErrors()
 
         if (data.temperature !in MIN_TEMPERATURE..MAX_TEMPERATURE)

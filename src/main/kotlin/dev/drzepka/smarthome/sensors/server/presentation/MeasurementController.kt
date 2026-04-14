@@ -4,7 +4,7 @@ import dev.drzepka.smarthome.sensors.server.application.LoggerPrincipal
 import dev.drzepka.smarthome.sensors.server.application.configuration.MEASUREMENTS_AUTH
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureDataDTO
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureData
 import dev.drzepka.smarthome.sensors.server.application.service.MeasurementService
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.authentication
@@ -41,7 +41,7 @@ private fun CreateMeasurementsRequest.toV2(): CreateMeasurementsRequestV2 {
         CreateMeasurementsRequestV2.Measurement().apply {
             deviceId = m.deviceId
             timestampOffsetMillis = m.timestampOffsetMillis
-            data = TemperatureDataDTO(
+            data = TemperatureData(
                 temperature = m.temperature,
                 humidity = m.humidity,
                 batteryVoltage = m.batteryVoltage,
