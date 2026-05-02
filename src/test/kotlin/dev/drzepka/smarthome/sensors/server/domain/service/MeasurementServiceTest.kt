@@ -2,7 +2,8 @@ package dev.drzepka.smarthome.sensors.server.domain.service
 
 import dev.drzepka.smarthome.sensors.server.application.ValidationErrors
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
 import dev.drzepka.smarthome.sensors.server.application.service.ConfigurationProviderService
 import dev.drzepka.smarthome.sensors.server.application.service.MeasurementService
 import dev.drzepka.smarthome.sensors.server.application.service.TaskScheduler
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.*
+import java.math.BigDecimal
 import java.time.Instant
 
 @ExtendWith(MockitoExtension::class)
@@ -30,7 +32,7 @@ internal class MeasurementServiceTest {
             taskSchedulerAction = it.getArgument(2) as (suspend () -> Unit)
         }
     }
-    private val measurementFactory = mock<MeasurementFactory>()
+    private val measurementCreator = mock<MeasurementCreator>()
     private val measurementRepository = mock<MeasurementRepository>()
 
     private var taskSchedulerAction: (suspend () -> Unit)? = null
@@ -50,7 +52,7 @@ internal class MeasurementServiceTest {
     fun `should create measurements - positive case`() = runBlocking {
         val measurement1 = getMeasurement(0)
         val measurement2 = getMeasurement(0)
-        whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
         val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
@@ -60,7 +62,7 @@ internal class MeasurementServiceTest {
 
         then(status.total).isEqualTo(2)
         then(status.created).isEqualTo(2)
-        verify(measurementFactory, times(2)).create(any(), any(), any())
+        verify(measurementCreator, times(2)).create(any(), any(), any())
 
         taskSchedulerAction!!.invoke()
         verifyMeasurementsSaved(Pair(0, listOf(measurement1, measurement2)))
@@ -70,7 +72,7 @@ internal class MeasurementServiceTest {
     fun `should create measurements - duplicates`() = runBlocking {
         val measurement1 = getMeasurement(0)
         val measurement2 = getMeasurement(0)
-        whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
         val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
@@ -88,7 +90,7 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should create measurements - validation errors`() = runBlocking {
-        whenever(measurementFactory.create(any(), any(), any())).thenThrow(ValidationException(ValidationErrors()))
+        whenever(measurementCreator.create(any(), any(), any())).thenThrow(ValidationException(ValidationErrors()))
 
         val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
@@ -105,7 +107,7 @@ internal class MeasurementServiceTest {
     @Test
     fun `should create measurements - other errors`() = runBlocking {
         whenever(
-            measurementFactory.create(any(), any(), any())
+            measurementCreator.create(any(), any(), any())
         ).thenThrow(IllegalStateException("something bad happened"))
 
         val request = CreateMeasurementsRequestV2()
@@ -123,7 +125,7 @@ internal class MeasurementServiceTest {
     @Test
     fun `should store measurements`() = runBlocking {
         val measurement = getMeasurement(0)
-        whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
 
         val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
@@ -148,7 +150,7 @@ internal class MeasurementServiceTest {
         val measurement1 = getMeasurement(0)
         val measurement2 = getMeasurement(1)
 
-        whenever(measurementFactory.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
         val request = CreateMeasurementsRequestV2()
         request.measurements.add(getRequestMeasurement(1))
@@ -178,11 +180,12 @@ internal class MeasurementServiceTest {
     private fun getMeasurement(groupId: Int): Measurement =
         Measurement(Instant.now(), 1, 2, groupId, "temperature", emptyMap())
 
-    private fun getRequestMeasurement(deviceId: Int): CreateMeasurementsRequestV2.Measurement {
-        return CreateMeasurementsRequestV2.Measurement().apply {
-            this.deviceId = deviceId
-        }
-    }
+    private fun getRequestMeasurement(deviceId: Int): TemperatureMeasurement = TemperatureMeasurement(
+        deviceId = deviceId,
+        time = Instant.parse("2026-01-01T12:00:00Z"),
+        temperature = BigDecimal("21.0"),
+        humidity = BigDecimal("55.0")
+    )
 
     private fun getLogger(): Logger = Logger().apply {
         id = 1
@@ -191,7 +194,7 @@ internal class MeasurementServiceTest {
     private fun getService(): MeasurementService = MeasurementService(
         configurationProviderService,
         taskScheduler,
-        measurementFactory,
+        measurementCreator,
         measurementRepository
     )
 }

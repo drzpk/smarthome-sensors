@@ -9,7 +9,7 @@ import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResourc
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureData
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -74,15 +74,14 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
             basicAuth(loggerId, password)
             contentType(ContentType.Application.Json)
             setBody(CreateMeasurementsRequestV2().apply {
-                measurements.add(CreateMeasurementsRequestV2.Measurement().apply {
-                    this.deviceId = deviceId
-                    data = TemperatureData(
-                        temperature = BigDecimal("21.0"),
-                        humidity = BigDecimal("55.0"),
-                        batteryVoltage = BigDecimal("3.7"),
-                        batteryLevel = 90
-                    )
-                })
+                measurements.add(TemperatureMeasurement(
+                    deviceId = deviceId,
+                    time = null,
+                    temperature = BigDecimal("21.0"),
+                    humidity = BigDecimal("55.0"),
+                    batteryVoltage = BigDecimal("3.7"),
+                    batteryLevel = 90
+                ))
             })
         }
 
@@ -100,13 +99,12 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
             basicAuth(loggerId, password)
             contentType(ContentType.Application.Json)
             setBody(CreateMeasurementsRequestV2().apply {
-                measurements.add(CreateMeasurementsRequestV2.Measurement().apply {
-                    this.deviceId = deviceId
-                    data = TemperatureData(
-                        temperature = BigDecimal("999.0"),  // out of range
-                        humidity = BigDecimal("55.0")
-                    )
-                })
+                measurements.add(TemperatureMeasurement(
+                    deviceId = deviceId,
+                    time = null,
+                    temperature = BigDecimal("999.0"),  // out of range
+                    humidity = BigDecimal("55.0")
+                ))
             })
         }
 

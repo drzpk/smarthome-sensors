@@ -1,0 +1,56 @@
+package dev.drzepka.smarthome.sensors.server.application.factory
+
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Phase
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Pv
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.PvMeasurement
+import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
+import java.time.Instant
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+
+class PvMeasurementFactory : MeasurementFactory<PvMeasurement> {
+
+    override fun supports(input: MeasurementDto) = input is PvMeasurement
+
+    override fun create(input: PvMeasurement, loggerId: Int, groupId: Int, time: Instant): Measurement {
+        return Measurement(
+            createdAt = time,
+            deviceId = input.deviceId,
+            loggerId = loggerId,
+            groupId = groupId,
+            type = TYPE,
+            fields = buildFields(input)
+        )
+    }
+
+    private fun buildFields(data: PvMeasurement): Map<String, Number?> {
+        val fields = mutableMapOf<String, Number?>(
+            "total_power" to data.totalPower,
+            "energy_today" to data.energyToday, // todo: store this value as volatile
+            "energy_total" to data.energyTotal
+        )
+        fields += phaseFields("phase_a", data.phaseA)
+        fields += phaseFields("phase_b", data.phaseB)
+        fields += phaseFields("phase_c", data.phaseC)
+        fields += pvPanelFields("pv1", data.pv1)
+        fields += pvPanelFields("pv2", data.pv2)
+        return fields
+    }
+
+    private fun phaseFields(prefix: String, phase: Phase): Map<String, Number?> = mapOf(
+        "${prefix}_voltage" to phase.voltage,
+        "${prefix}_current" to phase.current,
+        "${prefix}_power" to phase.power,
+        "${prefix}_frequency" to phase.frequency
+    )
+
+    private fun pvPanelFields(prefix: String, pv: Pv?): Map<String, Number?> = mapOf(
+        "${prefix}_voltage" to pv?.voltage,
+        "${prefix}_current" to pv?.current,
+        "${prefix}_power" to pv?.power,
+        "${prefix}_energy_today" to pv?.energyToday
+    )
+
+    companion object {
+        const val TYPE = "pv"
+    }
+}

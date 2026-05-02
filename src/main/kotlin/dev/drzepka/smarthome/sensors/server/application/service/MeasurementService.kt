@@ -2,7 +2,8 @@ package dev.drzepka.smarthome.sensors.server.application.service
 
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
 import dev.drzepka.smarthome.sensors.server.application.util.LifespanTracker
 import dev.drzepka.smarthome.sensors.server.application.util.describeErrors
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
@@ -15,7 +16,7 @@ import java.util.*
 class MeasurementService(
     configurationProviderService: ConfigurationProviderService,
     taskScheduler: TaskScheduler,
-    private val measurementFactory: MeasurementFactory,
+    private val measurementCreator: MeasurementCreator,
     private val measurementRepository: MeasurementRepository
 ) {
     private val log by Logger()
@@ -56,7 +57,7 @@ class MeasurementService(
     // two loggers post new measurements simultaneously
     @Synchronized
     private fun addMeasurement(
-        single: CreateMeasurementsRequestV2.Measurement,
+        single: MeasurementDto,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): Boolean? {
         return try {
@@ -74,14 +75,14 @@ class MeasurementService(
     }
 
     private fun doAddMeasurement(
-        single: CreateMeasurementsRequestV2.Measurement,
+        single: MeasurementDto,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): Boolean {
 
         // The deviceId variable alone is sufficient to track duplicated measurements.
         val measurementInfo = MeasurementInfo(single.deviceId)
 
-        val measurement = measurementFactory.create(single, logger.id!!)
+        val measurement = measurementCreator.create(single, logger.id!!)
         if (measurementTracker.exists(measurement.createdAt, measurementInfo)) {
             log.debug(
                 "Measurement from device {} has been already created within the minimum interval",

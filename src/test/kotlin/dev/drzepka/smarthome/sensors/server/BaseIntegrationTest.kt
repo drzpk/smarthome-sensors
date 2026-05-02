@@ -9,7 +9,14 @@ import dev.drzepka.smarthome.sensors.server.application.configuration.sensorsSer
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupRouting
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupSecurity
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupStatusPages
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCommonValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementValidator
 import dev.drzepka.smarthome.sensors.server.application.service.*
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.GroupRepository
@@ -36,6 +43,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import org.mockito.kotlin.any
@@ -93,7 +101,10 @@ abstract class BaseIntegrationTest {
         single { PasswordGeneratorService(get()) }
         // TaskScheduler is mocked to prevent background coroutines from leaking between tests
         single { mock<TaskScheduler>() }
-        single { MeasurementFactory(get()) }
+        single<List<MeasurementValidator<*>>>(named("validators")) { listOf(TemperatureMeasurementValidator(), PvMeasurementValidator()) }
+        single<List<MeasurementFactory<*>>>(named("factories")) { listOf(TemperatureMeasurementFactory(), PvMeasurementFactory()) }
+        single { MeasurementCommonValidator() }
+        single { MeasurementCreator(deviceRepository = get(), commonValidator = get(), validators = get(named("validators")), factories = get(named("factories"))) }
 
         single(createdAtStart = true) { ConfigurationProviderService() }
         single<HashService> { PBKDF2HashService() }

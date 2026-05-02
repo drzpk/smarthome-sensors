@@ -1,6 +1,13 @@
 package dev.drzepka.smarthome.sensors.server.application.configuration
 
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCommonValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementFactory
+import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementValidator
 import dev.drzepka.smarthome.sensors.server.application.service.*
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.GroupRepository
@@ -14,6 +21,7 @@ import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedLog
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InfluxDBMeasurementRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.service.PBKDF2HashService
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 fun sensorsServerKoinModule(): Module = module {
@@ -25,7 +33,10 @@ fun sensorsServerKoinModule(): Module = module {
     single { GroupService(get(), get()) }
     single { PasswordGeneratorService(get()) }
     single { TaskScheduler() }
-    single { MeasurementFactory(get()) }
+    single<List<MeasurementValidator<*>>>(named("validators")) { listOf(TemperatureMeasurementValidator(), PvMeasurementValidator()) }
+    single<List<MeasurementFactory<*>>>(named("factories")) { listOf(TemperatureMeasurementFactory(), PvMeasurementFactory()) }
+    single { MeasurementCommonValidator() }
+    single { MeasurementCreator(deviceRepository = get(), commonValidator = get(), validators = get(named("validators")), factories = get(named("factories"))) }
 
     // Infrastructure
     single(createdAtStart = true) { SQLDatabaseInitializer(get()) }
