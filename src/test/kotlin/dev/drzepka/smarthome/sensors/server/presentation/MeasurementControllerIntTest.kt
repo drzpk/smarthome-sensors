@@ -124,6 +124,19 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
         then(response.status).isEqualTo(HttpStatusCode.Unauthorized)
     }
 
+    @Test
+    fun `v2 - should return 401 with invalid credentials`() = testApp { client ->
+        val (loggerId, _, _) = setup(client)
+
+        val response = client.post("/api/v2/measurements") {
+            basicAuth(loggerId, "wrong-password")
+            contentType(ContentType.Application.Json)
+            setBody(CreateMeasurementsRequestV2())
+        }
+
+        then(response.status).isEqualTo(HttpStatusCode.Unauthorized)
+    }
+
     private suspend fun setup(client: HttpClient): Triple<String, String, Int> {
         val groupId = client.post("/api/groups") {
             contentType(ContentType.Application.Json)

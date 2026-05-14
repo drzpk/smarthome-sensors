@@ -97,6 +97,16 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     }
 
     @Test
+    fun `should return 404 when updating unknown group`() = testApp { client ->
+        val response = client.patch("/api/groups/9999") {
+            contentType(ContentType.Application.Json)
+            setBody(UpdateGroupRequest().apply { name = "New Name" })
+        }
+
+        then(response.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
     fun `should delete group`() = testApp { client ->
         val created = client.post("/api/groups") {
             contentType(ContentType.Application.Json)

@@ -94,6 +94,16 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
     }
 
     @Test
+    fun `should return 404 when updating unknown logger`() = testApp { client ->
+        val response = client.patch("/api/loggers/9999") {
+            contentType(ContentType.Application.Json)
+            setBody(UpdateLoggerRequest().apply { name = "new-name" })
+        }
+
+        then(response.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
     fun `should delete logger`() = testApp { client ->
         val created = createLogger(client, "to-delete")
 
@@ -102,6 +112,12 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
 
         val getResponse = client.get("/api/loggers/${created.id}")
         then(getResponse.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
+    fun `should return 404 when deleting unknown logger`() = testApp { client ->
+        val response = client.delete("/api/loggers/9999")
+        then(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
 
     @Test
@@ -114,6 +130,12 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
         then(response.status).isEqualTo(HttpStatusCode.OK)
         val body = response.body<LoggerResource>()
         then(body.password).isNotNull.isNotEqualTo(originalPassword)
+    }
+
+    @Test
+    fun `should return 404 when resetting password of unknown logger`() = testApp { client ->
+        val response = client.delete("/api/loggers/9999/password")
+        then(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
 
     private suspend fun createLogger(client: io.ktor.client.HttpClient, name: String): LoggerResource {

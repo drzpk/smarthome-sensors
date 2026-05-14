@@ -103,6 +103,16 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
     }
 
     @Test
+    fun `should return 404 when updating unknown device`() = testApp { client ->
+        val response = client.patch("/api/devices/9999") {
+            contentType(ContentType.Application.Json)
+            setBody(UpdateDeviceRequest().apply { name = "new-name" })
+        }
+
+        then(response.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
     fun `should delete device`() = testApp { client ->
         val group = createGroup(client, "Test Group")
         val created = createDevice(client, "to-delete", group.id)
@@ -112,6 +122,12 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
 
         val getResponse = client.get("/api/devices/${created.id}")
         then(getResponse.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
+    fun `should return 404 when deleting unknown device`() = testApp { client ->
+        val response = client.delete("/api/devices/9999")
+        then(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
 
     private suspend fun createGroup(client: HttpClient, name: String): GroupResource {
