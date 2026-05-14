@@ -58,7 +58,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("com.h2database:h2:2.3.232")
+    testRuntimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
     testImplementation("org.assertj:assertj-core:3.19.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("io.insert-koin:koin-test:$koinVersion")

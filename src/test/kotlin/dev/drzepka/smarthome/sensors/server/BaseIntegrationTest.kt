@@ -38,7 +38,10 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 import io.ktor.server.sessions.*
 import io.ktor.server.testing.*
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
+import java.util.TimeZone
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -56,8 +59,8 @@ abstract class BaseIntegrationTest {
 
     @BeforeEach
     fun resetDatabase() {
-        TransactionManager.defaultDatabase = h2Database
-        transaction(h2Database) {
+        TransactionManager.defaultDatabase = sqliteDatabase
+        transaction(sqliteDatabase) {
             SchemaUtils.drop(Devices, Groups, Loggers)
             SchemaUtils.create(Groups, Loggers, Devices)
         }
@@ -116,6 +119,12 @@ abstract class BaseIntegrationTest {
     }
 
     companion object {
+        init {
+            // Exposed converts Instant to LocalDateTime text for SQLite using the JVM timezone.
+            // Setting UTC here ensures timestamps round-trip correctly in tests.
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+        }
+
         const val INFLUX_ADMIN_TOKEN = "test-admin-token"
         const val INFLUX_ORG = "test-org"
         const val INFLUX_BUCKET = "measurements"
@@ -129,11 +138,14 @@ abstract class BaseIntegrationTest {
             }
         }
 
-        val h2Database: Database by lazy {
-            Database.connect(
-                "jdbc:h2:mem:integration_test;DB_CLOSE_DELAY=-1;IGNORECASE=true",
-                driver = "org.h2.Driver"
-            )
+        val sqliteDatabase: Database by lazy {
+            val config = HikariConfig().apply {
+                jdbcUrl = "jdbc:sqlite::memory:"
+                driverClassName = "org.sqlite.JDBC"
+                maximumPoolSize = 1
+                connectionTestQuery = "SELECT 1"
+            }
+            Database.connect(HikariDataSource(config))
         }
 
         fun createInfluxClient(): InfluxDBClientKotlin =

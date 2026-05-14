@@ -16,49 +16,117 @@ class ExposedDeviceRepositoryIntTest : BaseIntegrationTest() {
     @Test
     fun `should return empty collection when no devices exist`() {
         val result = transaction { repository.findAll() }
+
         then(result).isEmpty()
     }
 
     @Test
-    fun `should save and find device by id`() {
-        val group = savedGroup()
-        val device = transaction {
-            repository.save(newDevice("Thermometer", group))
-            repository.findByNameAndActive("Thermometer", true)!!
-        }
-
-        val found = transaction { repository.findById(device.id!!) }
-
-        then(found).isNotNull
-        then(found!!.name).isEqualTo("Thermometer")
-        then(found.type).isEqualTo("temperature")
-        then(found.active).isTrue
-        then(found.group!!.id).isEqualTo(group.id)
-    }
-
-    @Test
-    fun `should find device by name and active status`() {
+    fun `should return all devices regardless of active status`() {
         val group = savedGroup()
         transaction {
-            repository.save(newDevice("active-device", group, active = true))
-            repository.save(newDevice("inactive-device", group, active = false))
+            repository.save(device("active-one", group, active = true))
+            repository.save(device("inactive-one", group, active = false))
+            repository.save(device("active-two", group, active = true))
         }
 
-        val active = transaction { repository.findByNameAndActive("active-device", true) }
-        val notFound = transaction { repository.findByNameAndActive("active-device", false) }
+        val result = transaction { repository.findAll() }
 
-        then(active).isNotNull
-        then(notFound).isNull()
+        then(result).hasSize(3)
+        then(result.map { it.name }).containsExactlyInAnyOrder("active-one", "inactive-one", "active-two")
     }
 
     @Test
-    fun `should count devices by group`() {
+    fun `should return only active devices when filtered by active`() {
+        val group = savedGroup()
+        transaction {
+            repository.save(device("active", group, active = true))
+            repository.save(device("inactive", group, active = false))
+        }
+
+        val result = transaction { repository.findAll(active = true) }
+
+        then(result).hasSize(1)
+        then(result.first().name).isEqualTo("active")
+    }
+
+    @Test
+    fun `should return only inactive devices when filtered by inactive`() {
+        val group = savedGroup()
+        transaction {
+            repository.save(device("active", group, active = true))
+            repository.save(device("inactive", group, active = false))
+        }
+
+        val result = transaction { repository.findAll(active = false) }
+
+        then(result).hasSize(1)
+        then(result.first().name).isEqualTo("inactive")
+    }
+
+    @Test
+    fun `should return device with all fields when found by id`() {
+        val group = savedGroup()
+        val saved = transaction {
+            repository.save(device("thermometer", group))
+            repository.findByNameAndActive("thermometer", true)!!
+        }
+
+        val result = transaction { repository.findById(saved.id!!) }
+
+        then(result).isNotNull
+        then(result!!.id).isEqualTo(saved.id)
+        then(result.name).isEqualTo("thermometer")
+        then(result.description).isEqualTo("Test sensor")
+        then(result.type).isEqualTo("temperature")
+        then(result.mac).isEqualTo("AA:BB:CC:DD:EE:FF")
+        then(result.active).isTrue
+        then(result.createdAt).isEqualTo(FIXED_TIME)
+        then(result.group!!.id).isEqualTo(group.id)
+    }
+
+    @Test
+    fun `should return null when device id is unknown`() {
+        val result = transaction { repository.findById(9999) }
+
+        then(result).isNull()
+    }
+
+    @Test
+    fun `should return device when name and active match`() {
+        val group = savedGroup()
+        transaction { repository.save(device("sensor-01", group, active = true)) }
+
+        val result = transaction { repository.findByNameAndActive("sensor-01", true) }
+
+        then(result).isNotNull
+        then(result!!.name).isEqualTo("sensor-01")
+    }
+
+    @Test
+    fun `should return null when active does not match`() {
+        val group = savedGroup()
+        transaction { repository.save(device("sensor-01", group, active = true)) }
+
+        val result = transaction { repository.findByNameAndActive("sensor-01", false) }
+
+        then(result).isNull()
+    }
+
+    @Test
+    fun `should return null when name does not exist`() {
+        val result = transaction { repository.findByNameAndActive("nonexistent", true) }
+
+        then(result).isNull()
+    }
+
+    @Test
+    fun `should return count of devices in group`() {
         val group1 = savedGroup("Group 1")
         val group2 = savedGroup("Group 2")
         transaction {
-            repository.save(newDevice("Device A", group1))
-            repository.save(newDevice("Device B", group1))
-            repository.save(newDevice("Device C", group2))
+            repository.save(device("device-a", group1))
+            repository.save(device("device-b", group1))
+            repository.save(device("device-c", group2))
         }
 
         val count1 = transaction { repository.countByGroupId(group1.id!!) }
@@ -69,56 +137,67 @@ class ExposedDeviceRepositoryIntTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun `should update device`() {
+    fun `should return zero for group with no devices`() {
         val group = savedGroup()
-        val device = transaction {
-            repository.save(newDevice("Old Name", group))
-            repository.findByNameAndActive("Old Name", true)!!
-        }
 
-        transaction {
-            device.name = "New Name"
-            device.active = false
-            repository.save(device)
-        }
+        val count = transaction { repository.countByGroupId(group.id!!) }
 
-        val updated = transaction { repository.findById(device.id!!) }
-        then(updated!!.name).isEqualTo("New Name")
-        then(updated.active).isFalse
+        then(count).isEqualTo(0)
     }
 
     @Test
-    fun `should return only active devices when filtered`() {
+    fun `should insert new device and assign id`() {
         val group = savedGroup()
+        val newDevice = device("new-sensor", group)
+
+        transaction { repository.save(newDevice) }
+
+        then(newDevice.id).isNotNull.isGreaterThan(0)
+        val found = transaction { repository.findById(newDevice.id!!) }
+        then(found).isNotNull
+        then(found!!.name).isEqualTo("new-sensor")
+        then(found.createdAt).isEqualTo(FIXED_TIME)
+    }
+
+    @Test
+    fun `should update existing device`() {
+        val group = savedGroup()
+        val saved = transaction {
+            repository.save(device("old-name", group, active = true))
+            repository.findByNameAndActive("old-name", true)!!
+        }
+
         transaction {
-            repository.save(newDevice("active", group, active = true))
-            repository.save(newDevice("inactive", group, active = false))
+            saved.name = "new-name"
+            saved.active = false
+            saved.description = "Updated"
+            repository.save(saved)
         }
 
-        val activeOnly = transaction { repository.findAll(active = true) }
-
-        then(activeOnly).hasSize(1)
-        then(activeOnly.first().name).isEqualTo("active")
+        val updated = transaction { repository.findById(saved.id!!) }
+        then(updated!!.name).isEqualTo("new-name")
+        then(updated.active).isFalse
+        then(updated.description).isEqualTo("Updated")
     }
 
-    private fun savedGroup(name: String = "Test Group"): Group {
-        return transaction {
-            val group = Group().apply {
-                this.name = name
-                description = "desc"
-                createdAt = Instant.now()
-            }
-            groupRepository.save(group)
-            group
-        }
+    private fun savedGroup(name: String = "Test Group"): Group = transaction {
+        Group().apply {
+            this.name = name
+            description = "desc"
+            createdAt = FIXED_TIME
+        }.also { groupRepository.save(it) }
     }
 
-    private fun newDevice(name: String, group: Group, active: Boolean = true) = Device(group).apply {
+    private fun device(name: String, group: Group, active: Boolean = true) = Device(group).apply {
         this.name = name
-        description = "A sensor"
+        description = "Test sensor"
         type = "temperature"
         mac = "AA:BB:CC:DD:EE:FF"
-        createdAt = Instant.now()
+        createdAt = FIXED_TIME
         this.active = active
+    }
+
+    companion object {
+        private val FIXED_TIME = Instant.parse("2024-01-15T10:00:00Z")
     }
 }
