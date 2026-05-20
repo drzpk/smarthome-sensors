@@ -5,45 +5,26 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
-import dev.drzepka.smarthome.sensors.server.application.configuration.sensorsServerKoinModule
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupRouting
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupSecurity
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupStatusPages
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCommonValidator
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementValidator
-import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementFactory
-import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementValidator
-import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementFactory
-import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.*
 import dev.drzepka.smarthome.sensors.server.application.service.*
-import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.GroupRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.LoggerRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
+import dev.drzepka.smarthome.sensors.server.domain.repository.*
 import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDBDatabaseManager
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedDeviceRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedGroupRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedLoggerRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InfluxDBMeasurementRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InMemoryLiveDataRepository
+import dev.drzepka.smarthome.sensors.server.infrastructure.repository.*
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.table.Devices
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.table.Groups
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.table.Loggers
 import dev.drzepka.smarthome.sensors.server.infrastructure.service.PBKDF2HashService
 import io.ktor.client.*
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 import io.ktor.server.sessions.*
 import io.ktor.server.testing.*
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
-import java.util.TimeZone
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -56,6 +37,9 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.testcontainers.containers.InfluxDBContainer
 import org.testcontainers.utility.DockerImageName
+import java.util.*
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 
 abstract class BaseIntegrationTest {
 

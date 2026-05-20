@@ -3,14 +3,14 @@ package dev.drzepka.smarthome.sensors.server.application.service
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
 import dev.drzepka.smarthome.sensors.server.domain.util.Mockable
 import kotlinx.coroutines.*
+import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.ceil
 
 @Mockable
-class TaskScheduler {
+class TaskScheduler(private val clock: Clock = Clock.systemUTC()) {
     private val log by Logger()
     private val activeTasks = ConcurrentHashMap.newKeySet<String>()
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -37,14 +37,14 @@ class TaskScheduler {
         scope.launch {
             delay(getInitialDelay(interval))
 
-            var nextPlannedExecution = Instant.now()
+            var nextPlannedExecution = clock.instant()
             while (isActive(name)) {
                 log.info("Executing task '{}'", name)
 
                 execute(name, task)
 
                 nextPlannedExecution = nextPlannedExecution.plus(interval)
-                val now = Instant.now()
+                val now = clock.instant()
                 var millis = nextPlannedExecution.toEpochMilli() - now.toEpochMilli()
 
                 if (millis < 1) {
@@ -65,10 +65,11 @@ class TaskScheduler {
 
     private fun isActive(name: String): Boolean = activeTasks.contains(name)
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun getInitialDelay(interval: Duration): Long {
-        // TODO: align to closest time unit
-        return 0L
+    internal fun getInitialDelay(interval: Duration): Long {
+        val now = clock.millis()
+        val intervalMillis = interval.toMillis()
+        val nextBoundary = (now / intervalMillis + 1) * intervalMillis
+        return nextBoundary - now
     }
 
     private suspend fun execute(name: String, task: (suspend () -> Unit)) {

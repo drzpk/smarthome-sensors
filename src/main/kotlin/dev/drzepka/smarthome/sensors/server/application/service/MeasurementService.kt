@@ -3,7 +3,6 @@ package dev.drzepka.smarthome.sensors.server.application.service
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
 import dev.drzepka.smarthome.sensors.server.application.util.LifespanTracker
 import dev.drzepka.smarthome.sensors.server.application.util.describeErrors
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
@@ -13,6 +12,7 @@ import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementReposit
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
 import java.time.Duration
 import java.util.*
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
 
 class MeasurementService(
     configurationProviderService: ConfigurationProviderService,
@@ -114,7 +114,7 @@ class MeasurementService(
             .forEach { group ->
                 try {
                     measurementRepository.save(group.key, group.value)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     log.error("Error while storing {} measurements for group {}", group.value.size, group.key)
                 }
             }
