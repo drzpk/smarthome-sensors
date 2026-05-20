@@ -6,12 +6,19 @@ import dev.drzepka.smarthome.sensors.server.application.dto.device.DeviceResourc
 import dev.drzepka.smarthome.sensors.server.application.dto.device.UpdateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.group.CreateGroupRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.group.GroupResource
+import dev.drzepka.smarthome.sensors.server.application.dto.logger.CreateLoggerRequest
+import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResource
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Phase
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.PvMeasurement
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+import java.util.*
 
 class DeviceControllerIntTest : BaseIntegrationTest() {
 
@@ -130,6 +137,49 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
         then(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
 
+    @Test
+    fun `should return 404 for live data when no measurement has been submitted`() = testApp { client ->
+        val group = createGroup(client, "Test Group")
+        val device = createDevice(client, "pv-sensor", group.id)
+
+        val response = client.get("/api/devices/${device.id}/live")
+
+        then(response.status).isEqualTo(HttpStatusCode.NotFound)
+    }
+
+    @Test
+    fun `should return live data after PV measurement is submitted`() = testApp { client ->
+        val group = createGroup(client, "Test Group")
+        val device = createDevice(client, "pv-sensor", group.id, type = "pv")
+        val logger = createLogger(client)
+        val phase = Phase(voltage = 230.0f, current = 4.3f, power = 1000, frequency = 50.0f)
+
+        client.post("/api/v2/measurements") {
+            basicAuth(logger.id.toString(), logger.password!!)
+            contentType(ContentType.Application.Json)
+            setBody(CreateMeasurementsRequestV2().apply {
+                measurements.add(PvMeasurement(
+                    deviceId = device.id,
+                    time = null,
+                    totalPower = 3000,
+                    energyToday = BigDecimal("12.5"),
+                    energyTotal = BigDecimal("1500.0"),
+                    phaseA = phase,
+                    phaseB = phase,
+                    phaseC = phase,
+                    pv1 = null,
+                    pv2 = null
+                ))
+            })
+        }
+
+        val response = client.get("/api/devices/${device.id}/live")
+
+        then(response.status).isEqualTo(HttpStatusCode.OK)
+        val body = response.body<Map<String, Any>>()
+        then(body["energy_today"] as Double).isEqualTo(12.5)
+    }
+
     private suspend fun createGroup(client: HttpClient, name: String): GroupResource {
         return client.post("/api/groups") {
             contentType(ContentType.Application.Json)
@@ -137,16 +187,33 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
         }.body()
     }
 
-    private suspend fun createDevice(client: HttpClient, name: String, groupId: Int): DeviceResource {
+    private suspend fun createDevice(
+        client: HttpClient,
+        name: String,
+        groupId: Int,
+        type: String = "temperature"
+    ): DeviceResource {
         return client.post("/api/devices") {
             contentType(ContentType.Application.Json)
             setBody(CreateDeviceRequest().apply {
                 this.name = name
                 description = "A sensor"
-                type = "temperature"
+                this.type = type
                 mac = "AA:BB:CC:DD:EE:FF"
                 this.groupId = groupId
             })
         }.body()
+    }
+
+    private suspend fun createLogger(client: HttpClient): LoggerResource {
+        return client.post("/api/loggers") {
+            contentType(ContentType.Application.Json)
+            setBody(CreateLoggerRequest().apply { name = "test-logger"; description = "desc" })
+        }.body()
+    }
+
+    private fun HttpRequestBuilder.basicAuth(username: String, password: String) {
+        val encoded = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
+        header(HttpHeaders.Authorization, "Basic $encoded")
     }
 }

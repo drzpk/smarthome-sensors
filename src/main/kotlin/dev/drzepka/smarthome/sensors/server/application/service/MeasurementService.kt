@@ -8,6 +8,7 @@ import dev.drzepka.smarthome.sensors.server.application.util.LifespanTracker
 import dev.drzepka.smarthome.sensors.server.application.util.describeErrors
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
+import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
 import java.time.Duration
@@ -17,7 +18,8 @@ class MeasurementService(
     configurationProviderService: ConfigurationProviderService,
     taskScheduler: TaskScheduler,
     private val measurementCreator: MeasurementCreator,
-    private val measurementRepository: MeasurementRepository
+    private val measurementRepository: MeasurementRepository,
+    private val liveDataRepository: LiveDataRepository
 ) {
     private val log by Logger()
     private val queue = LinkedList<Measurement>()
@@ -92,6 +94,7 @@ class MeasurementService(
         }
 
         synchronized(queue) { queue.add(measurement) }
+        liveDataRepository.save(measurement)
         log.trace("Added measurement {} to queue. New size: {}", measurement.createdAt, queue.size)
 
         measurementTracker.track(measurement.createdAt, measurementInfo)

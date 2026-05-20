@@ -47,7 +47,7 @@ class PvMeasurementFactoryTest {
         val measurement = factory.create(data, loggerId = 1, groupId = 1, time = Instant.parse("2026-01-01T12:00:00Z"))
 
         then(measurement.fields["total_power"]).isEqualTo(2967)
-        then(measurement.fields["energy_today"]).isEqualTo(BigDecimal("12.0"))
+        then(measurement.fields).doesNotContainKey("energy_today")
         then(measurement.fields["energy_total"]).isEqualTo(BigDecimal("1500.0"))
         then(measurement.fields["phase_a_voltage"]).isEqualTo(231.0f)
         then(measurement.fields["phase_a_current"]).isEqualTo(4.4f)
@@ -69,6 +69,16 @@ class PvMeasurementFactoryTest {
         then(measurement.fields["pv2_current"]).isEqualTo(4.1f)
         then(measurement.fields["pv2_power"]).isEqualTo(1394)
         then(measurement.fields["pv2_energy_today"]).isEqualTo(BigDecimal("5.8"))
+    }
+
+    @Test
+    fun `should put energy_today in live fields`() {
+        val data = validData(energyToday = BigDecimal("12.5"))
+
+        val measurement = factory.create(data, loggerId = 1, groupId = 1, time = Instant.parse("2026-01-01T12:00:00Z"))
+
+        then(measurement.liveFields["energy_today"]).isEqualTo(BigDecimal("12.5"))
+        then(measurement.liveFields).hasSize(1)
     }
 
     @Test

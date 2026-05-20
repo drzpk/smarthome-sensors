@@ -3,6 +3,7 @@ package dev.drzepka.smarthome.sensors.server.presentation
 import dev.drzepka.smarthome.sensors.server.application.dto.device.CreateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.device.UpdateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.service.DeviceService
+import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
 import io.ktor.http.*
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -18,6 +19,7 @@ import org.koin.ktor.ext.get
 fun Route.deviceController() {
 
     val deviceService = get<DeviceService>()
+    val liveDataRepository = get<LiveDataRepository>()
 
     route("/devices") {
         post("") {
@@ -65,6 +67,13 @@ fun Route.deviceController() {
             }
 
             call.respond(HttpStatusCode.NoContent)
+        }
+
+        get("/{id}/live") {
+            val deviceId = call.parameters["id"]!!.toInt()
+            val liveData = liveDataRepository.findByDeviceId(deviceId)
+                ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(liveData)
         }
     }
 }

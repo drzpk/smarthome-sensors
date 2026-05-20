@@ -20,6 +20,7 @@ import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasu
 import dev.drzepka.smarthome.sensors.server.application.service.*
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.GroupRepository
+import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.LoggerRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDBDatabaseManager
@@ -27,6 +28,7 @@ import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedDev
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedGroupRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedLoggerRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InfluxDBMeasurementRepository
+import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InMemoryLiveDataRepository
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.table.Devices
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.table.Groups
 import dev.drzepka.smarthome.sensors.server.infrastructure.repository.table.Loggers
@@ -98,7 +100,7 @@ abstract class BaseIntegrationTest {
 
     private fun testKoinModule() = module {
         single { DeviceService(get(), get()) }
-        single { MeasurementService(get(), get(), get(), get()) }
+        single { MeasurementService(get(), get(), get(), get(), get()) }
         single { LoggerService(get(), get(), get()) }
         single { GroupService(get(), get()) }
         single { PasswordGeneratorService(get()) }
@@ -112,6 +114,7 @@ abstract class BaseIntegrationTest {
         single(createdAtStart = true) { ConfigurationProviderService() }
         single<HashService> { PBKDF2HashService() }
 
+        single<LiveDataRepository> { InMemoryLiveDataRepository() }
         single<DeviceRepository> { ExposedDeviceRepository(get()) }
         single<LoggerRepository> { ExposedLoggerRepository() }
         single<GroupRepository> { ExposedGroupRepository() }

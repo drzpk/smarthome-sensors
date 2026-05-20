@@ -10,6 +10,7 @@ import dev.drzepka.smarthome.sensors.server.application.service.TaskScheduler
 import dev.drzepka.smarthome.sensors.server.domain.entity.Logger
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
+import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.BDDAssertions.then
@@ -34,6 +35,7 @@ internal class MeasurementServiceTest {
     }
     private val measurementCreator = mock<MeasurementCreator>()
     private val measurementRepository = mock<MeasurementRepository>()
+    private val liveDataRepository = mock<LiveDataRepository>()
 
     private var taskSchedulerAction: (suspend () -> Unit)? = null
 
@@ -69,6 +71,19 @@ internal class MeasurementServiceTest {
     }
 
     @Test
+    fun `should save live data when measurement is accepted`() = runBlocking {
+        val measurement = getMeasurement(0)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
+
+        val request = CreateMeasurementsRequestV2()
+        request.measurements.add(getRequestMeasurement(1))
+
+        getService().createMeasurements(request, getLogger())
+
+        verify(liveDataRepository).save(measurement)
+    }
+
+    @Test
     fun `should create measurements - duplicates`() = runBlocking {
         val measurement1 = getMeasurement(0)
         val measurement2 = getMeasurement(0)
@@ -83,6 +98,7 @@ internal class MeasurementServiceTest {
         then(status.total).isEqualTo(2)
         then(status.created).isEqualTo(1)
         then(status.duplicated).isEqualTo(1)
+        verify(liveDataRepository, times(1)).save(any())
 
         taskSchedulerAction!!.invoke()
         verifyMeasurementsSaved(Pair(0, listOf(measurement1)))
@@ -99,6 +115,7 @@ internal class MeasurementServiceTest {
 
         then(status.total).isEqualTo(1)
         then(status.errors).isEqualTo(1)
+        verify(liveDataRepository, never()).save(any())
 
         taskSchedulerAction!!.invoke()
         verifyMeasurementsSaved()
@@ -117,6 +134,7 @@ internal class MeasurementServiceTest {
 
         then(status.total).isEqualTo(1)
         then(status.errors).isEqualTo(1)
+        verify(liveDataRepository, never()).save(any())
 
         taskSchedulerAction!!.invoke()
         verifyMeasurementsSaved()
@@ -195,6 +213,7 @@ internal class MeasurementServiceTest {
         configurationProviderService,
         taskScheduler,
         measurementCreator,
-        measurementRepository
+        measurementRepository,
+        liveDataRepository
     )
 }

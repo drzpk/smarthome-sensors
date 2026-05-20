@@ -18,14 +18,18 @@ class PvMeasurementFactory : MeasurementFactory<PvMeasurement> {
             loggerId = loggerId,
             groupId = groupId,
             type = TYPE,
-            fields = buildFields(input)
+            fields = buildFields(input),
+            liveFields = buildLiveFields(input)
         )
     }
+
+    private fun buildLiveFields(data: PvMeasurement): Map<String, Number?> = mapOf(
+        "energy_today" to data.energyToday
+    )
 
     private fun buildFields(data: PvMeasurement): Map<String, Number?> {
         val fields = mutableMapOf<String, Number?>(
             "total_power" to data.totalPower,
-            "energy_today" to data.energyToday, // todo: store this value as volatile
             "energy_total" to data.energyTotal
         )
         fields += phaseFields("phase_a", data.phaseA)
