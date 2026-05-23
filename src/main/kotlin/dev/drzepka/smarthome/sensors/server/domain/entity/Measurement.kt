@@ -8,6 +8,6 @@ class Measurement(
     val loggerId: Int,
     val groupId: Int,
     val type: String,
-    val fields: Map<String, Number?>,
-    val liveFields: Map<String, Number?> = emptyMap()
+    val fields: Map<String, Number>,
+    val liveFields: Map<String, Number> = emptyMap()
 )

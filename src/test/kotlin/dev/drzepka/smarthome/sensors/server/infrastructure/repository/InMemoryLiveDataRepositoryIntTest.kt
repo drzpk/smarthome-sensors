@@ -74,7 +74,7 @@ class InMemoryLiveDataRepositoryIntTest {
     private fun measurement(
         deviceId: Int,
         time: Instant = T1,
-        liveFields: Map<String, Number?> = mapOf("energy_today" to BigDecimal("12.5"))
+        liveFields: Map<String, Number> = mapOf("energy_today" to BigDecimal("12.5"))
     ) = Measurement(
         createdAt = time,
         deviceId = deviceId,

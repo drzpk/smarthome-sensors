@@ -34,9 +34,9 @@ data class PvMeasurement(
     val totalPower: Int,
     val energyToday: BigDecimal,
     val energyTotal: BigDecimal,
-    val phaseA: Phase,
-    val phaseB: Phase,
-    val phaseC: Phase,
+    val phaseA: Phase?,
+    val phaseB: Phase?,
+    val phaseC: Phase?,
     val pv1: Pv?,
     val pv2: Pv?
 ) : Measurement

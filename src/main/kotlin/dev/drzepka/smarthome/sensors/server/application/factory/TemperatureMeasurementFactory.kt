@@ -1,6 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.util.mapOfNotNull
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -22,7 +23,7 @@ class TemperatureMeasurementFactory : MeasurementFactory<TemperatureMeasurement>
         )
     }
 
-    private fun buildFields(data: TemperatureMeasurement): Map<String, Number?> = mapOf(
+    private fun buildFields(data: TemperatureMeasurement): Map<String, Number> = mapOfNotNull(
         "temperature" to normalizeNumber(data.temperature, 2),
         "humidity" to normalizeNumber(data.humidity, 2),
         "battery_voltage" to data.batteryVoltage?.let { normalizeNumber(it, 3) },
