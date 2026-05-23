@@ -9,7 +9,7 @@ import dev.drzepka.smarthome.sensors.server.domain.util.Mockable
 
 @Suppress("LeakingThis")
 @Mockable
-class InfluxDBDatabaseManager(configProvider: ConfigurationProviderService) {
+class InfluxDBDatabaseManager(private val configProvider: ConfigurationProviderService) {
 
     private val log by Logger()
 
@@ -30,18 +30,25 @@ class InfluxDBDatabaseManager(configProvider: ConfigurationProviderService) {
         }
     }
 
+    fun getInfluxDBBucket(groupId: Int): String {
+        val connectionsConfig = configProvider.config.getConfigList(INFLUXDB_CONNECTIONS)
+        connectionsConfig.first {
+            val groups = it.getIntList(INFLUXDB_GROUPS)
+            groups.contains(groupId)
+        }.let { return it.getString(INFLUXDB_BUCKET) }
+    }
+
     fun getInfluxDBClient(groupId: Int): InfluxDBClientKotlin {
         return clientMap[groupId] ?: throw IllegalArgumentException("No InfluxDB client found for group $groupId")
     }
-
-    fun getAllInfluxDBClients(): Collection<InfluxDBClientKotlin> = allClients
 
     private fun createClient(index: Int, config: Config): InfluxDBClientKotlin {
         try {
             val url = config.getString(INFLUXDB_URL)
             val org = config.getString(INFLUXDB_ORG)
             val token = config.getString(INFLUXDB_TOKEN)
-            return InfluxDBClientKotlinFactory.create(url, token.toCharArray(), org)
+            val bucket = config.getString(INFLUXDB_BUCKET)
+            return InfluxDBClientKotlinFactory.create(url, token.toCharArray(), org, bucket)
         } catch (e: Exception) {
             throw IllegalStateException("Error while creating InfluxDB client #$index", e)
         }
@@ -53,5 +60,6 @@ class InfluxDBDatabaseManager(configProvider: ConfigurationProviderService) {
         private const val INFLUXDB_URL = "url"
         private const val INFLUXDB_ORG = "org"
         private const val INFLUXDB_TOKEN = "token"
+        private const val INFLUXDB_BUCKET = "bucket"
     }
 }

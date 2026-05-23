@@ -55,6 +55,7 @@ class InfluxDBDatabaseManagerIntTest : BaseIntegrationTest() {
                   url = "${influxDB.url}"
                   org = "$INFLUX_ORG"
                   token = "$INFLUX_ADMIN_TOKEN"
+                  bucket = "$INFLUX_BUCKET"
                 }
               ]
             }

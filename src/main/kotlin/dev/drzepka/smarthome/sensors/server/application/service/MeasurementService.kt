@@ -89,7 +89,7 @@ class MeasurementService(
         liveDataRepository.save(measurement)
 
         if (!measurementTracker.isTracked(deviceId))
-            initializeTrackerForDevice(deviceId, measurement.createdAt)
+            initializeTrackerForDevice(measurement.groupId, deviceId, measurement.createdAt)
 
         if (measurementTracker.existsOrTrack(measurement.createdAt, deviceId)) {
             log.debug(
@@ -104,9 +104,9 @@ class MeasurementService(
         return true
     }
 
-    private suspend fun initializeTrackerForDevice(deviceId: Int, referenceTime: Instant) {
+    private suspend fun initializeTrackerForDevice(groupId: Int, deviceId: Int, referenceTime: Instant) {
         val since = referenceTime.minus(minInterval)
-        val latestTime = measurementRepository.findLatestMeasurementTime(deviceId, since)
+        val latestTime = measurementRepository.findLatestMeasurementTime(groupId, deviceId, since)
 
         // Always track to mark device as seen and prevent repeated DB queries
         measurementTracker.track(latestTime ?: Instant.EPOCH, deviceId)

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
+import com.typesafe.config.ConfigFactory
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupRouting
@@ -32,7 +33,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.testcontainers.containers.InfluxDBContainer
@@ -139,11 +139,21 @@ abstract class BaseIntegrationTest {
             InfluxDBClientKotlinFactory.create(influxDB.url, INFLUX_ADMIN_TOKEN.toCharArray(), INFLUX_ORG)
 
         fun createInfluxManager(): InfluxDBDatabaseManager {
-            val client = createInfluxClient()
-            return mock {
-                on { getInfluxDBClient(any()) } doReturn client
-                on { getAllInfluxDBClients() } doReturn listOf(client)
+            val config = ConfigFactory.parseString(
+                """
+                database.influxdb = [{
+                  groups = [0, 1, 2, 3, 4, 5]
+                  url = "${influxDB.url}"
+                  org = "$INFLUX_ORG"
+                  token = "$INFLUX_ADMIN_TOKEN"
+                  bucket = "$INFLUX_BUCKET"
+                }]
+                """.trimIndent()
+            )
+            val configProvider = mock<ConfigurationProviderService> {
+                on { this.config } doReturn config
             }
+            return InfluxDBDatabaseManager(configProvider)
         }
     }
 }

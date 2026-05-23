@@ -26,6 +26,26 @@ internal class InfluxDBDatabaseManagerTest {
             .withMessage("No InfluxDB client found for group 3")
     }
 
+    @Test
+    fun `should get InfluxDB bucket for group`() {
+        val config = ConfigFactory.parseString(CONFIG_TEXT)
+        whenever(configProvider.config).thenReturn(config)
+        val manager = InfluxDBDatabaseManager(configProvider)
+
+        then(manager.getInfluxDBBucket(1)).isEqualTo("test-bucket")
+        then(manager.getInfluxDBBucket(2)).isEqualTo("test-bucket")
+    }
+
+    @Test
+    fun `should throw exception when getting bucket for unknown group`() {
+        val config = ConfigFactory.parseString(CONFIG_TEXT)
+        whenever(configProvider.config).thenReturn(config)
+        val manager = InfluxDBDatabaseManager(configProvider)
+
+        assertThatExceptionOfType(NoSuchElementException::class.java)
+            .isThrownBy { manager.getInfluxDBBucket(99) }
+    }
+
     companion object {
         private val CONFIG_TEXT = """
             database {
@@ -36,13 +56,14 @@ internal class InfluxDBDatabaseManagerTest {
                 password = "smart_home_sensors"
                 maximumPoolSize = 10
               }
-            
+
               influxdb = [
                 {
                   groups = [1,2]
                   url = "http://localhost:8086"
                   org = "drzepka.dev"
                   token = "Biz_jG-pjvRv8tpoloCqvidTpBXPf2dGB3sqg1Gr4mJTmSKm5khJblidJhAsPM79i_FIU4ATNE8HXuxFON1mMw=="
+                  bucket = "test-bucket"
                 }
               ]
             }

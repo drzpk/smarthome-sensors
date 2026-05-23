@@ -35,7 +35,7 @@ internal class MeasurementServiceTest {
     }
     private val measurementCreator = mock<MeasurementCreator>()
     private val measurementRepository = mock<MeasurementRepository> {
-        onBlocking { findLatestMeasurementTime(any(), any()) } doReturn null
+        onBlocking { findLatestMeasurementTime(any(), any(), any()) } doReturn null
     }
     private val liveDataRepository = mock<LiveDataRepository>()
 
@@ -206,7 +206,7 @@ internal class MeasurementServiceTest {
     fun `should initialize tracker from database for first measurement from a device`() = runBlocking {
         val dbTime = Instant.parse("2026-01-01T11:59:45Z")
         val measurementTime = Instant.parse("2026-01-01T12:00:00Z")
-        wheneverBlocking { measurementRepository.findLatestMeasurementTime(eq(1), any()) } doReturn dbTime
+        wheneverBlocking { measurementRepository.findLatestMeasurementTime(eq(0), eq(1), any()) } doReturn dbTime
 
         val measurement = getMeasurement(0, measurementTime)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
@@ -218,7 +218,7 @@ internal class MeasurementServiceTest {
 
         then(status.duplicated).isEqualTo(1)
         then(status.created).isEqualTo(0)
-        verifyBlocking(measurementRepository) { findLatestMeasurementTime(eq(1), any()) }
+        verifyBlocking(measurementRepository) { findLatestMeasurementTime(eq(0), eq(1), any()) }
     }
 
     @Test
@@ -247,7 +247,7 @@ internal class MeasurementServiceTest {
 
         getService().createMeasurements(request, getLogger())
 
-        verifyBlocking(measurementRepository, times(1)) { findLatestMeasurementTime(eq(1), any()) }
+        verifyBlocking(measurementRepository, times(1)) { findLatestMeasurementTime(eq(0), eq(1), any()) }
     }
 
     @Test

@@ -23,27 +23,28 @@ class InfluxDBMeasurementRepository(private val influxDbManager: InfluxDBDatabas
 
         influxDbManager.getInfluxDBClient(groupId)
             .getWriteKotlinApi()
-            .writePoints(points, bucket = "measurements")
+            .writePoints(points)
     }
 
-    override suspend fun findLatestMeasurementTime(deviceId: Int, since: Instant): Instant? {
+    override suspend fun findLatestMeasurementTime(groupId: Int, deviceId: Int, since: Instant): Instant? {
         val query = """
-            from(bucket: "measurements")
+            from(bucket: "${influxDbManager.getInfluxDBBucket(groupId)}")
               |> range(start: $since)
               |> filter(fn: (r) => r["device"] == "$deviceId")
+              |> keep(columns: ["_time"])
               |> group()
-              |> last()
+              |> sort(columns: ["_time"], desc: true)
+              |> limit(n: 1)
         """.trimIndent()
 
         var latest: Instant? = null
-        for (client in influxDbManager.getAllInfluxDBClients()) {
-            client.getQueryKotlinApi().query(query).consumeEach { record: FluxRecord ->
-                val t = record.getTime() ?: return@consumeEach
-                if (latest == null || t.isAfter(latest!!)) {
-                    latest = t
-                }
+        influxDbManager.getInfluxDBClient(groupId).getQueryKotlinApi().query(query).consumeEach { record: FluxRecord ->
+            val t = record.time ?: return@consumeEach
+            if (latest == null || t.isAfter(latest)) {
+                latest = t
             }
         }
+
         return latest
     }
 

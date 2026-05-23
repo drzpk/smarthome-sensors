@@ -16,12 +16,14 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
     @Test
     fun `should write measurement and read it back`(): Unit = runBlocking {
         val repository = InfluxDBMeasurementRepository(createInfluxManager())
+        val deviceId = nextDeviceId()
+        val loggerId = nextDeviceId()
 
         val measurementTime = Instant.now().truncatedTo(ChronoUnit.SECONDS)
         val measurement = Measurement(
             createdAt = measurementTime,
-            deviceId = 1,
-            loggerId = 2,
+            deviceId = deviceId,
+            loggerId = loggerId,
             groupId = 0,
             type = "temperature",
             fields = mapOf(
@@ -41,7 +43,7 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
             from(bucket: "$INFLUX_BUCKET")
               |> range(start: -5m)
               |> filter(fn: (r) => r._measurement == "temperature")
-              |> filter(fn: (r) => r["device"] == "1" and r["logger"] == "2")
+              |> filter(fn: (r) => r["device"] == "$deviceId" and r["logger"] == "$loggerId")
         """.trimIndent()
 
         val client = createInfluxClient()
@@ -58,19 +60,20 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
 
         val sampleRecord = records.first()
         then(sampleRecord.measurement).isEqualTo("temperature")
-        then(sampleRecord.values["device"]).isEqualTo("1")
-        then(sampleRecord.values["logger"]).isEqualTo("2")
+        then(sampleRecord.values["device"]).isEqualTo("$deviceId")
+        then(sampleRecord.values["logger"]).isEqualTo("$loggerId")
     }
 
     @Test
     fun `should write multiple measurements`(): Unit = runBlocking {
         val repository = InfluxDBMeasurementRepository(createInfluxManager())
+        val loggerId = nextDeviceId()
 
         val measurements = (1..3).map { i ->
             Measurement(
                 createdAt = Instant.now().minusSeconds(i.toLong()).truncatedTo(ChronoUnit.SECONDS),
-                deviceId = i,
-                loggerId = 1,
+                deviceId = nextDeviceId(),
+                loggerId = loggerId,
                 groupId = 0,
                 type = "temperature",
                 fields = mapOf("temperature" to BigDecimal("${20 + i}.00"), "humidity" to BigDecimal("50.00"))
@@ -86,7 +89,7 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
               |> range(start: -5m)
               |> filter(fn: (r) => r._measurement == "temperature")
               |> filter(fn: (r) => r._field == "temperature")
-              |> filter(fn: (r) => r["logger"] == "1")
+              |> filter(fn: (r) => r["logger"] == "$loggerId")
         """.trimIndent()
 
         val client = createInfluxClient()
@@ -106,7 +109,7 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
         repository.save(0, listOf(measurement(deviceId, t1), measurement(deviceId, t2)))
         Thread.sleep(500)
 
-        val result = repository.findLatestMeasurementTime(deviceId, Instant.now().minusSeconds(60))
+        val result = repository.findLatestMeasurementTime(0, deviceId, Instant.now().minusSeconds(60))
 
         then(result).isEqualTo(t2)
     }
@@ -115,7 +118,7 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
     fun `findLatestMeasurementTime should return null when no measurements exist for device`(): Unit = runBlocking {
         val repository = InfluxDBMeasurementRepository(createInfluxManager())
 
-        val result = repository.findLatestMeasurementTime(nextDeviceId(), Instant.now().minusSeconds(60))
+        val result = repository.findLatestMeasurementTime(0, nextDeviceId(), Instant.now().minusSeconds(60))
 
         then(result).isNull()
     }
@@ -129,7 +132,7 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
         repository.save(0, listOf(measurement(deviceId, oldTime)))
         Thread.sleep(500)
 
-        val result = repository.findLatestMeasurementTime(deviceId, Instant.now().minusSeconds(60))
+        val result = repository.findLatestMeasurementTime(0, deviceId, Instant.now().minusSeconds(60))
 
         then(result).isNull()
     }
@@ -143,7 +146,7 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
         repository.save(0, listOf(measurement(deviceId, Instant.now().minusSeconds(5).truncatedTo(ChronoUnit.SECONDS))))
         Thread.sleep(500)
 
-        val result = repository.findLatestMeasurementTime(otherDeviceId, Instant.now().minusSeconds(60))
+        val result = repository.findLatestMeasurementTime(0, otherDeviceId, Instant.now().minusSeconds(60))
 
         then(result).isNull()
     }

@@ -5,5 +5,5 @@ import java.time.Instant
 
 interface MeasurementRepository {
     suspend fun save(groupId: Int, measurements: Collection<Measurement>)
-    suspend fun findLatestMeasurementTime(deviceId: Int, since: Instant): Instant?
+    suspend fun findLatestMeasurementTime(groupId: Int, deviceId: Int, since: Instant): Instant?
 }
