@@ -98,10 +98,26 @@ internal class MeasurementServiceTest {
         then(status.total).isEqualTo(2)
         then(status.created).isEqualTo(1)
         then(status.duplicated).isEqualTo(1)
-        verify(liveDataRepository, times(1)).save(any())
+        verify(liveDataRepository, times(2)).save(any())
 
         taskSchedulerAction!!.invoke()
         verifyMeasurementsSaved(Pair(0, listOf(measurement1)))
+    }
+
+    @Test
+    fun `should save to live data repository even when measurement is rate limited`() = runBlocking {
+        val measurement1 = getMeasurement(0)
+        val measurement2 = getMeasurement(0)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+
+        val request = CreateMeasurementsRequestV2()
+        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement(1))
+
+        getService().createMeasurements(request, getLogger())
+
+        verify(liveDataRepository).save(measurement1)
+        verify(liveDataRepository).save(measurement2)
     }
 
     @Test

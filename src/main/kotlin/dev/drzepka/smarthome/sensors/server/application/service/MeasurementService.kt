@@ -85,6 +85,8 @@ class MeasurementService(
         val measurementInfo = MeasurementInfo(single.deviceId)
 
         val measurement = measurementCreator.create(single, logger.id!!)
+        liveDataRepository.save(measurement)
+
         if (measurementTracker.exists(measurement.createdAt, measurementInfo)) {
             log.debug(
                 "Measurement from device {} has been already created within the minimum interval",
@@ -94,7 +96,6 @@ class MeasurementService(
         }
 
         synchronized(queue) { queue.add(measurement) }
-        liveDataRepository.save(measurement)
         log.trace("Added measurement {} to queue. New size: {}", measurement.createdAt, queue.size)
 
         measurementTracker.track(measurement.createdAt, measurementInfo)
