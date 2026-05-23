@@ -2,10 +2,13 @@ package dev.drzepka.smarthome.sensors.server.infrastructure.repository
 
 import com.influxdb.client.domain.WritePrecision
 import com.influxdb.client.write.Point
+import com.influxdb.query.FluxRecord
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
 import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDBDatabaseManager
+import kotlinx.coroutines.channels.consumeEach
+import java.time.Instant
 
 class InfluxDBMeasurementRepository(private val influxDbManager: InfluxDBDatabaseManager) : MeasurementRepository {
 
@@ -21,6 +24,27 @@ class InfluxDBMeasurementRepository(private val influxDbManager: InfluxDBDatabas
         influxDbManager.getInfluxDBClient(groupId)
             .getWriteKotlinApi()
             .writePoints(points, bucket = "measurements")
+    }
+
+    override suspend fun findLatestMeasurementTime(deviceId: Int, since: Instant): Instant? {
+        val query = """
+            from(bucket: "measurements")
+              |> range(start: $since)
+              |> filter(fn: (r) => r["device"] == "$deviceId")
+              |> group()
+              |> last()
+        """.trimIndent()
+
+        var latest: Instant? = null
+        for (client in influxDbManager.getAllInfluxDBClients()) {
+            client.getQueryKotlinApi().query(query).consumeEach { record: FluxRecord ->
+                val t = record.getTime() ?: return@consumeEach
+                if (latest == null || t.isAfter(latest!!)) {
+                    latest = t
+                }
+            }
+        }
+        return latest
     }
 
     private fun convertToPoint(measurement: Measurement): Point {

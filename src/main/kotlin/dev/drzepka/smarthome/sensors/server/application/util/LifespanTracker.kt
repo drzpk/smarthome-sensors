@@ -2,40 +2,44 @@ package dev.drzepka.smarthome.sensors.server.application.util
 
 import java.time.Duration
 import java.time.Instant
-import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 class LifespanTracker<T>(private val lifespan: Duration) {
-    private val map = TreeMap<Instant, T>()
+    private val map = HashMap<T, Instant>()
     private val lock = ReentrantReadWriteLock()
 
-    fun track(time: Instant, obj: T, now: Instant = Instant.now()) {
+    fun track(time: Instant, obj: T) {
         lock.write {
-            clearOldData(now)
-            map.put(time, obj)
+            val existing = map[obj]
+            if (existing == null || time.isAfter(existing)) {
+                map[obj] = time
+            }
         }
     }
+
+    fun isTracked(obj: T): Boolean = lock.read { map.containsKey(obj) }
 
     fun exists(time: Instant, obj: T): Boolean {
         return lock.read {
-            val found = map.entries.firstOrNull { it.value == obj }
-            found != null && isValid(found.key, time)
+            val trackedTime = map[obj] ?: return@read false
+            !trackedTime.plus(lifespan).isBefore(time)
         }
     }
 
-    private fun clearOldData(time: Instant) {
-        val it = map.iterator()
-
-        while (it.hasNext()) {
-            val next = it.next()
-            if (!isValid(next.key, time))
-                it.remove()
-            else
-                break
+    // Atomically checks existence and, if not a duplicate, updates the tracked time.
+    // Returns true if the measurement at [time] is within the lifespan of the previously tracked time (duplicate).
+    fun existsOrTrack(time: Instant, obj: T): Boolean {
+        lock.write {
+            val trackedTime = map[obj]
+            if (trackedTime != null && !trackedTime.plus(lifespan).isBefore(time)) {
+                return true
+            }
+            if (trackedTime == null || time.isAfter(trackedTime)) {
+                map[obj] = time
+            }
+            return false
         }
     }
-
-    private fun isValid(time: Instant, now: Instant): Boolean = !time.plus(lifespan).isBefore(now)
 }

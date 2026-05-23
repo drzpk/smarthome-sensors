@@ -138,8 +138,12 @@ abstract class BaseIntegrationTest {
         fun createInfluxClient(): InfluxDBClientKotlin =
             InfluxDBClientKotlinFactory.create(influxDB.url, INFLUX_ADMIN_TOKEN.toCharArray(), INFLUX_ORG)
 
-        fun createInfluxManager(): InfluxDBDatabaseManager = mock {
-            on { getInfluxDBClient(any()) } doReturn createInfluxClient()
+        fun createInfluxManager(): InfluxDBDatabaseManager {
+            val client = createInfluxClient()
+            return mock {
+                on { getInfluxDBClient(any()) } doReturn client
+                on { getAllInfluxDBClients() } doReturn listOf(client)
+            }
         }
     }
 }

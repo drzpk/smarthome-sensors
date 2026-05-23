@@ -11,7 +11,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.koin.ktor.ext.get
 
 fun Route.measurementControllerV2() {
@@ -23,7 +23,7 @@ fun Route.measurementControllerV2() {
             post {
                 val request = call.receive<CreateMeasurementsRequestV2>()
                 val principal = call.authentication.principal<LoggerPrincipal>()!!
-                val status = transaction {
+                val status = newSuspendedTransaction {
                     measurementService.createMeasurements(request, principal.logger)
                 }
 

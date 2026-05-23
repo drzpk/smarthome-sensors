@@ -10,8 +10,10 @@ import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
 import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Duration
-import java.util.*
+import java.time.Instant
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
 
 class MeasurementService(
@@ -22,31 +24,36 @@ class MeasurementService(
     private val liveDataRepository: LiveDataRepository
 ) {
     private val log by Logger()
-    private val queue = LinkedList<Measurement>()
-    private val measurementTracker: LifespanTracker<MeasurementInfo>
+    private val queue = ArrayDeque<Measurement>()
+    private val queueMutex = Mutex()
+    private val minInterval: Duration
+    private val measurementTracker: LifespanTracker<Int>
 
     init {
-        val minInterval = configurationProviderService.getInt("measurements.minimumCreationIntervalSeconds")
-        log.info("Setting minimum measurement interval to {} seconds", minInterval)
-        measurementTracker = LifespanTracker(Duration.ofSeconds(minInterval.toLong()))
+        val minIntervalSeconds = configurationProviderService.getInt("measurements.minimumCreationIntervalSeconds")
+        minInterval = Duration.ofSeconds(minIntervalSeconds.toLong())
+        log.info("Setting minimum measurement interval to {} seconds", minIntervalSeconds)
+        measurementTracker = LifespanTracker(minInterval)
 
-        taskScheduler.schedule("measurementSend", Duration.ofMinutes(1L), this::storeMeasurements)
+        taskScheduler.schedule("measurementStorage", Duration.ofSeconds(30L), this::storeMeasurements)
     }
 
     // todo: stats per time interval and per device (DeviceStatsService?)
-    fun createMeasurements(
+    suspend fun createMeasurements(
         request: CreateMeasurementsRequestV2,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): CreateMeasurementsResponse {
         val response = CreateMeasurementsResponse()
 
-        request.measurements.forEach {
-            when (addMeasurement(it, logger)) {
-                true -> response.created++
-                false -> response.duplicated++
-                null -> response.errors++
+        request.measurements
+            .sortedWith(compareBy(nullsLast()) { it.time })
+            .forEach {
+                when (addMeasurement(it, logger)) {
+                    true -> response.created++
+                    false -> response.duplicated++
+                    null -> response.errors++
+                }
             }
-        }
 
         log.debug(
             "Processed {} measurements from logger {} (created: {}, duplicated: {}, errors: {})",
@@ -55,10 +62,7 @@ class MeasurementService(
         return response
     }
 
-    // Synchronization is required to prevent from inconsistency with measurement tracker when
-    // two loggers post new measurements simultaneously
-    @Synchronized
-    private fun addMeasurement(
+    private suspend fun addMeasurement(
         single: MeasurementDto,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): Boolean? {
@@ -76,36 +80,43 @@ class MeasurementService(
         }
     }
 
-    private fun doAddMeasurement(
+    private suspend fun doAddMeasurement(
         single: MeasurementDto,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): Boolean {
-
-        // The deviceId variable alone is sufficient to track duplicated measurements.
-        val measurementInfo = MeasurementInfo(single.deviceId)
-
+        val deviceId = single.deviceId
         val measurement = measurementCreator.create(single, logger.id!!)
         liveDataRepository.save(measurement)
 
-        if (measurementTracker.exists(measurement.createdAt, measurementInfo)) {
+        if (!measurementTracker.isTracked(deviceId))
+            initializeTrackerForDevice(deviceId, measurement.createdAt)
+
+        if (measurementTracker.existsOrTrack(measurement.createdAt, deviceId)) {
             log.debug(
                 "Measurement from device {} has been already created within the minimum interval",
-                single.deviceId
+                deviceId
             )
             return false
         }
 
-        synchronized(queue) { queue.add(measurement) }
-        log.trace("Added measurement {} to queue. New size: {}", measurement.createdAt, queue.size)
-
-        measurementTracker.track(measurement.createdAt, measurementInfo)
+        queueMutex.withLock { queue.add(measurement) }
 
         return true
     }
 
+    private suspend fun initializeTrackerForDevice(deviceId: Int, referenceTime: Instant) {
+        val since = referenceTime.minus(minInterval)
+        val latestTime = measurementRepository.findLatestMeasurementTime(deviceId, since)
+
+        // Always track to mark device as seen and prevent repeated DB queries
+        measurementTracker.track(latestTime ?: Instant.EPOCH, deviceId)
+        if (latestTime != null)
+            log.debug("Initialized tracker for device {} with latest DB measurement at {}", deviceId, latestTime)
+    }
+
     private suspend fun storeMeasurements() {
         log.debug("Storing {} measurements", queue.size)
-        val clone = synchronized(queue) {
+        val clone = queueMutex.withLock {
             val ret = ArrayList(queue)
             queue.clear()
             ret
@@ -120,7 +131,4 @@ class MeasurementService(
                 }
             }
     }
-
-    private data class MeasurementInfo(val deviceId: Int)
-
 }

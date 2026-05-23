@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
 
@@ -93,5 +94,71 @@ class InfluxDBMeasurementRepositoryIntTest : BaseIntegrationTest() {
         client.close()
 
         then(records).hasSize(3)
+    }
+
+    @Test
+    fun `findLatestMeasurementTime should return latest time for device`(): Unit = runBlocking {
+        val repository = InfluxDBMeasurementRepository(createInfluxManager())
+        val deviceId = nextDeviceId()
+        val t1 = Instant.now().minusSeconds(10).truncatedTo(ChronoUnit.SECONDS)
+        val t2 = Instant.now().minusSeconds(5).truncatedTo(ChronoUnit.SECONDS)
+
+        repository.save(0, listOf(measurement(deviceId, t1), measurement(deviceId, t2)))
+        Thread.sleep(500)
+
+        val result = repository.findLatestMeasurementTime(deviceId, Instant.now().minusSeconds(60))
+
+        then(result).isEqualTo(t2)
+    }
+
+    @Test
+    fun `findLatestMeasurementTime should return null when no measurements exist for device`(): Unit = runBlocking {
+        val repository = InfluxDBMeasurementRepository(createInfluxManager())
+
+        val result = repository.findLatestMeasurementTime(nextDeviceId(), Instant.now().minusSeconds(60))
+
+        then(result).isNull()
+    }
+
+    @Test
+    fun `findLatestMeasurementTime should return null when measurement is before since`(): Unit = runBlocking {
+        val repository = InfluxDBMeasurementRepository(createInfluxManager())
+        val deviceId = nextDeviceId()
+        val oldTime = Instant.now().minusSeconds(120).truncatedTo(ChronoUnit.SECONDS)
+
+        repository.save(0, listOf(measurement(deviceId, oldTime)))
+        Thread.sleep(500)
+
+        val result = repository.findLatestMeasurementTime(deviceId, Instant.now().minusSeconds(60))
+
+        then(result).isNull()
+    }
+
+    @Test
+    fun `findLatestMeasurementTime should not return measurements for other devices`(): Unit = runBlocking {
+        val repository = InfluxDBMeasurementRepository(createInfluxManager())
+        val deviceId = nextDeviceId()
+        val otherDeviceId = nextDeviceId()
+
+        repository.save(0, listOf(measurement(deviceId, Instant.now().minusSeconds(5).truncatedTo(ChronoUnit.SECONDS))))
+        Thread.sleep(500)
+
+        val result = repository.findLatestMeasurementTime(otherDeviceId, Instant.now().minusSeconds(60))
+
+        then(result).isNull()
+    }
+
+    private fun measurement(deviceId: Int, time: Instant): Measurement = Measurement(
+        createdAt = time,
+        deviceId = deviceId,
+        loggerId = 99,
+        groupId = 0,
+        type = "temperature",
+        fields = mapOf("temperature" to BigDecimal("21.00"), "humidity" to BigDecimal("50.00"))
+    )
+
+    companion object {
+        private val deviceIdCounter = AtomicInteger(100)
+        private fun nextDeviceId() = deviceIdCounter.getAndIncrement()
     }
 }

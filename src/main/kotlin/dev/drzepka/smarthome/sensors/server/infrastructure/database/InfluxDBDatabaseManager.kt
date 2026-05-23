@@ -14,6 +14,7 @@ class InfluxDBDatabaseManager(configProvider: ConfigurationProviderService) {
     private val log by Logger()
 
     private val clientMap = HashMap<Int, InfluxDBClientKotlin>()
+    private val allClients = mutableListOf<InfluxDBClientKotlin>()
 
     init {
         val connectionsConfig = configProvider.config.getConfigList(INFLUXDB_CONNECTIONS)
@@ -24,6 +25,7 @@ class InfluxDBDatabaseManager(configProvider: ConfigurationProviderService) {
             log.debug("Creating InfluxDB connection for groups {}", groups)
 
             val created = createClient(index, singleConfig)
+            allClients.add(created)
             groups.forEach { clientMap[it] = created }
         }
     }
@@ -31,6 +33,8 @@ class InfluxDBDatabaseManager(configProvider: ConfigurationProviderService) {
     fun getInfluxDBClient(groupId: Int): InfluxDBClientKotlin {
         return clientMap[groupId] ?: throw IllegalArgumentException("No InfluxDB client found for group $groupId")
     }
+
+    fun getAllInfluxDBClients(): Collection<InfluxDBClientKotlin> = allClients
 
     private fun createClient(index: Int, config: Config): InfluxDBClientKotlin {
         try {

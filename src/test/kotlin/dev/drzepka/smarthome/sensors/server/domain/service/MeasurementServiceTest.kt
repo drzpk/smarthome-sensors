@@ -34,7 +34,9 @@ internal class MeasurementServiceTest {
         }
     }
     private val measurementCreator = mock<MeasurementCreator>()
-    private val measurementRepository = mock<MeasurementRepository>()
+    private val measurementRepository = mock<MeasurementRepository> {
+        onBlocking { findLatestMeasurementTime(any(), any()) } doReturn null
+    }
     private val liveDataRepository = mock<LiveDataRepository>()
 
     private var taskSchedulerAction: (suspend () -> Unit)? = null
@@ -200,6 +202,76 @@ internal class MeasurementServiceTest {
         verifyMeasurementsSaved(Pair(0, listOf(measurement1)), Pair(1, listOf(measurement2)))
     }
 
+    @Test
+    fun `should initialize tracker from database for first measurement from a device`() = runBlocking {
+        val dbTime = Instant.parse("2026-01-01T11:59:45Z")
+        val measurementTime = Instant.parse("2026-01-01T12:00:00Z")
+        wheneverBlocking { measurementRepository.findLatestMeasurementTime(eq(1), any()) } doReturn dbTime
+
+        val measurement = getMeasurement(0, measurementTime)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
+
+        val request = CreateMeasurementsRequestV2()
+        request.measurements.add(getRequestMeasurement(1, time = measurementTime))
+
+        val status = getService().createMeasurements(request, getLogger())
+
+        then(status.duplicated).isEqualTo(1)
+        then(status.created).isEqualTo(0)
+        verifyBlocking(measurementRepository) { findLatestMeasurementTime(eq(1), any()) }
+    }
+
+    @Test
+    fun `should accept measurement when no recent database measurement exists for device`(): Unit = runBlocking {
+        val measurement = getMeasurement(0, Instant.parse("2026-01-01T12:00:00Z"))
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
+
+        val request = CreateMeasurementsRequestV2()
+        request.measurements.add(getRequestMeasurement(1))
+
+        val status = getService().createMeasurements(request, getLogger())
+
+        then(status.created).isEqualTo(1)
+        then(status.duplicated).isEqualTo(0)
+    }
+
+    @Test
+    fun `should initialize tracker from database only once per device`() = runBlocking {
+        val m1 = getMeasurement(0, Instant.parse("2026-01-01T12:00:00Z"))
+        val m2 = getMeasurement(0, Instant.parse("2026-01-01T12:01:00Z"))
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(m1, m2)
+
+        val request = CreateMeasurementsRequestV2()
+        request.measurements.add(getRequestMeasurement(1, time = Instant.parse("2026-01-01T12:00:00Z")))
+        request.measurements.add(getRequestMeasurement(1, time = Instant.parse("2026-01-01T12:01:00Z")))
+
+        getService().createMeasurements(request, getLogger())
+
+        verifyBlocking(measurementRepository, times(1)) { findLatestMeasurementTime(eq(1), any()) }
+    }
+
+    @Test
+    fun `should process measurements sorted by time`(): Unit = runBlocking {
+        val t1 = Instant.parse("2026-01-01T12:00:00Z")
+        val t2 = Instant.parse("2026-01-01T12:00:05Z")
+        val t3 = Instant.parse("2026-01-01T12:00:15Z")
+
+        val m1 = getMeasurement(0, t1)
+        val m2 = getMeasurement(0, t2)
+        val m3 = getMeasurement(0, t3)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(m1, m2, m3)
+
+        val request = CreateMeasurementsRequestV2()
+        request.measurements.add(getRequestMeasurement(1, time = t3))
+        request.measurements.add(getRequestMeasurement(1, time = t1))
+        request.measurements.add(getRequestMeasurement(1, time = t2))
+
+        val status = getService().createMeasurements(request, getLogger())
+
+        then(status.created).isEqualTo(1)
+        then(status.duplicated).isEqualTo(2)
+    }
+
     private suspend fun verifyMeasurementsSaved(vararg measurements: Pair<Int, Collection<Measurement>>) {
         if (measurements.isNotEmpty()) {
             measurements.forEach {
@@ -211,12 +283,12 @@ internal class MeasurementServiceTest {
         }
     }
 
-    private fun getMeasurement(groupId: Int): Measurement =
-        Measurement(Instant.now(), 1, 2, groupId, "temperature", emptyMap())
+    private fun getMeasurement(groupId: Int, createdAt: Instant = Instant.now()): Measurement =
+        Measurement(createdAt, 1, 2, groupId, "temperature", emptyMap())
 
-    private fun getRequestMeasurement(deviceId: Int): TemperatureMeasurement = TemperatureMeasurement(
+    private fun getRequestMeasurement(deviceId: Int, time: Instant? = Instant.parse("2026-01-01T12:00:00Z")): TemperatureMeasurement = TemperatureMeasurement(
         deviceId = deviceId,
-        time = Instant.parse("2026-01-01T12:00:00Z"),
+        time = time,
         temperature = BigDecimal("21.0"),
         humidity = BigDecimal("55.0")
     )
