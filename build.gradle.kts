@@ -1,20 +1,14 @@
-import com.google.cloud.tools.jib.api.Jib
 import com.google.cloud.tools.jib.gradle.JibTask
 
 plugins {
     application
-    kotlin("jvm") version "2.2.20"
-    kotlin("plugin.allopen") version "2.2.20"
-    id("com.google.cloud.tools.jib") version "3.4.5"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.allopen)
+    alias(libs.plugins.jib)
 }
 
 group = "dev.drzepka.smarthome"
 version = "1.2.1"
-
-val logback_version: String by project
-val ktor_version: String by project
-val kotlin_version: String by project
-
 
 application {
     mainClass.set("io.ktor.server.tomcat.EngineMain")
@@ -30,46 +24,43 @@ repositories {
 }
 
 dependencies {
-    val koinVersion: String by project
-    val exposedVersion: String by project
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.ktor.server.tomcat)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.sessions)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.serialization.jackson)
+    implementation(libs.ktor.server.auth)
+    implementation(libs.koin.core)
+    implementation(libs.koin.ktor)
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.java.time)
+    implementation(libs.exposed.dao)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.hikari)
+    implementation(libs.liquibase)
+    implementation(libs.logback)
+    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.influxdb.client.kotlin)
+    implementation(libs.typesafe.config)
+    runtimeOnly(libs.mariadb)
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
-    implementation("io.ktor:ktor-server-tomcat:$ktor_version")
-    implementation("io.ktor:ktor-server-core:$ktor_version")
-    implementation("io.ktor:ktor-server-sessions:$ktor_version")
-    implementation("io.ktor:ktor-server-content-negotiation:$ktor_version")
-    implementation("io.ktor:ktor-server-status-pages:$ktor_version")
-    implementation("io.ktor:ktor-serialization-jackson-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-auth-jvm:$ktor_version")
-    implementation("io.insert-koin:koin-core:$koinVersion")
-    implementation("io.insert-koin:koin-ktor:$koinVersion")
-    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("com.zaxxer:HikariCP:7.0.2")
-    implementation("org.liquibase:liquibase-core:4.33.0")
-    implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0")
-    implementation("com.influxdb:influxdb-client-kotlin:7.3.0")
-    implementation("com.typesafe:config:1.4.1")
-    runtimeOnly("org.mariadb.jdbc:mariadb-java-client:3.5.6")
-
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.13.4")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
-    testImplementation("org.assertj:assertj-core:3.19.0")
-    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
-    testImplementation("io.insert-koin:koin-test:$koinVersion")
-    testImplementation("org.mockito:mockito-core:5.19.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
-    testImplementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
-    val testcontainersVersion = "2.0.4"
-    testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
-    testImplementation("org.testcontainers:testcontainers-junit-jupiter:$testcontainersVersion")
-    testImplementation("org.testcontainers:testcontainers-influxdb:$testcontainersVersion")
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.sqlite.jdbc)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.koin.test)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.influxdb)
     // Required at compile time: Testcontainers' GenericContainer implements JUnit 4's TestRule
 }
 
