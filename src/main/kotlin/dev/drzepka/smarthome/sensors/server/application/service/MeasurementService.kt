@@ -1,7 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.application.service
 
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
 import dev.drzepka.smarthome.sensors.server.application.util.LifespanTracker
 import dev.drzepka.smarthome.sensors.server.application.util.describeErrors
@@ -14,7 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Duration
 import java.time.Instant
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 class MeasurementService(
     configurationProviderService: ConfigurationProviderService,
@@ -40,7 +40,7 @@ class MeasurementService(
 
     // todo: stats per time interval and per device (DeviceStatsService?)
     suspend fun createMeasurements(
-        request: CreateMeasurementsRequestV2,
+        request: CreateMeasurementsRequest,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): CreateMeasurementsResponse {
         val response = CreateMeasurementsResponse()

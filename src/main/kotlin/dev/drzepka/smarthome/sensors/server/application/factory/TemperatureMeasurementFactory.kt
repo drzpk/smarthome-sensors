@@ -1,12 +1,12 @@
 package dev.drzepka.smarthome.sensors.server.application.factory
 
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
 import dev.drzepka.smarthome.sensors.server.application.util.mapOfNotNull
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 class TemperatureMeasurementFactory : MeasurementFactory<TemperatureMeasurement> {
 

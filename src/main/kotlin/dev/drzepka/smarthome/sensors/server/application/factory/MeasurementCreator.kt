@@ -4,7 +4,7 @@ import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
 import dev.drzepka.smarthome.sensors.server.domain.util.Mockable
 import java.time.Instant
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 @Mockable
 class MeasurementCreator(

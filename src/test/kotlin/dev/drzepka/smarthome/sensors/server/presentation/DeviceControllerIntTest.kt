@@ -8,9 +8,9 @@ import dev.drzepka.smarthome.sensors.server.application.dto.group.CreateGroupReq
 import dev.drzepka.smarthome.sensors.server.application.dto.group.GroupResource
 import dev.drzepka.smarthome.sensors.server.application.dto.logger.CreateLoggerRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResource
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Phase
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.PvMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Phase
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.PvMeasurement
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -154,10 +154,10 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
         val logger = createLogger(client)
         val phase = Phase(voltage = 230.0f, current = 4.3f, power = 1000, frequency = 50.0f)
 
-        client.post("/api/v2/measurements") {
+        client.post("/api/measurements") {
             basicAuth(logger.id.toString(), logger.password!!)
             contentType(ContentType.Application.Json)
-            setBody(CreateMeasurementsRequestV2().apply {
+            setBody(CreateMeasurementsRequest().apply {
                 measurements.add(PvMeasurement(
                     deviceId = device.id,
                     time = null,

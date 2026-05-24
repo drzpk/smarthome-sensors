@@ -1,8 +1,8 @@
 package dev.drzepka.smarthome.sensors.server.domain.service
 
 import dev.drzepka.smarthome.sensors.server.application.ValidationErrors
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.CreateMeasurementsRequestV2
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
 import dev.drzepka.smarthome.sensors.server.application.service.ConfigurationProviderService
 import dev.drzepka.smarthome.sensors.server.application.service.MeasurementService
@@ -58,7 +58,7 @@ internal class MeasurementServiceTest {
         val measurement2 = getMeasurement(0)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
         request.measurements.add(getRequestMeasurement(2))
 
@@ -77,7 +77,7 @@ internal class MeasurementServiceTest {
         val measurement = getMeasurement(0)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
 
         getService().createMeasurements(request, getLogger())
@@ -91,7 +91,7 @@ internal class MeasurementServiceTest {
         val measurement2 = getMeasurement(0)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
         request.measurements.add(getRequestMeasurement(1))
 
@@ -112,7 +112,7 @@ internal class MeasurementServiceTest {
         val measurement2 = getMeasurement(0)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
         request.measurements.add(getRequestMeasurement(1))
 
@@ -126,7 +126,7 @@ internal class MeasurementServiceTest {
     fun `should create measurements - validation errors`() = runBlocking {
         whenever(measurementCreator.create(any(), any(), any())).thenThrow(ValidationException(ValidationErrors()))
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
 
         val status = getService().createMeasurements(request, getLogger())
@@ -145,7 +145,7 @@ internal class MeasurementServiceTest {
             measurementCreator.create(any(), any(), any())
         ).thenThrow(IllegalStateException("something bad happened"))
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
 
         val status = getService().createMeasurements(request, getLogger())
@@ -163,7 +163,7 @@ internal class MeasurementServiceTest {
         val measurement = getMeasurement(0)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
 
         val service = getService()
@@ -188,7 +188,7 @@ internal class MeasurementServiceTest {
 
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
         request.measurements.add(getRequestMeasurement(2))
 
@@ -211,7 +211,7 @@ internal class MeasurementServiceTest {
         val measurement = getMeasurement(0, measurementTime)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1, time = measurementTime))
 
         val status = getService().createMeasurements(request, getLogger())
@@ -226,7 +226,7 @@ internal class MeasurementServiceTest {
         val measurement = getMeasurement(0, Instant.parse("2026-01-01T12:00:00Z"))
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1))
 
         val status = getService().createMeasurements(request, getLogger())
@@ -241,7 +241,7 @@ internal class MeasurementServiceTest {
         val m2 = getMeasurement(0, Instant.parse("2026-01-01T12:01:00Z"))
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(m1, m2)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1, time = Instant.parse("2026-01-01T12:00:00Z")))
         request.measurements.add(getRequestMeasurement(1, time = Instant.parse("2026-01-01T12:01:00Z")))
 
@@ -261,7 +261,7 @@ internal class MeasurementServiceTest {
         val m3 = getMeasurement(0, t3)
         whenever(measurementCreator.create(any(), any(), any())).thenReturn(m1, m2, m3)
 
-        val request = CreateMeasurementsRequestV2()
+        val request = CreateMeasurementsRequest()
         request.measurements.add(getRequestMeasurement(1, time = t3))
         request.measurements.add(getRequestMeasurement(1, time = t1))
         request.measurements.add(getRequestMeasurement(1, time = t2))

@@ -1,7 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.ValidationResult
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 interface MeasurementValidator<T : MeasurementDto> {
     fun supports(input: MeasurementDto): Boolean

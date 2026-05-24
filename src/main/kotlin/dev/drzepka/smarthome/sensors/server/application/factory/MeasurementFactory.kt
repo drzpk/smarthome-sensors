@@ -2,7 +2,7 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import java.time.Instant
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 interface MeasurementFactory<T : MeasurementDto> {
     fun supports(input: MeasurementDto): Boolean

@@ -40,7 +40,9 @@ class ConfigurationProviderService {
     }
 
     internal fun loadExternalConfiguration(): Config? {
-        val path = System.getProperty("EXTERNAL_CONFIG_PATH") ?: return null
+        val path = System.getenv("CONFIG_FILE")
+            ?: System.getProperty("CONFIG_FILE")
+            ?: return null
         val file = File(path)
         if (!file.isFile)
             throw IllegalArgumentException("Configuration file $path doesn't exist")

@@ -2,10 +2,10 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.FieldError
 import dev.drzepka.smarthome.sensors.server.application.ValidationResult
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Phase
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Pv
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.PvMeasurement
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Phase
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Pv
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.PvMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal

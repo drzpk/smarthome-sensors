@@ -1,6 +1,6 @@
 package dev.drzepka.smarthome.sensors.server.application.factory
 
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal

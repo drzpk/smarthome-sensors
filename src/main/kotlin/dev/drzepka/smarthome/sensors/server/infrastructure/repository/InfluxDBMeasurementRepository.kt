@@ -56,7 +56,7 @@ class InfluxDBMeasurementRepository(private val influxDbManager: InfluxDBDatabas
         point.addTag(TAG_LOGGER, measurement.loggerId.toString())
 
         measurement.fields.forEach { (name, value) ->
-            if (value != null) point.addField(name, value)
+            point.addField(name, value)
         }
 
         return point

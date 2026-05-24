@@ -4,10 +4,8 @@ import dev.drzepka.smarthome.sensors.server.presentation.deviceController
 import dev.drzepka.smarthome.sensors.server.presentation.groupController
 import dev.drzepka.smarthome.sensors.server.presentation.loggerController
 import dev.drzepka.smarthome.sensors.server.presentation.measurementController
-import dev.drzepka.smarthome.sensors.server.presentation.measurementControllerV2
-import io.ktor.server.application.Application
-import io.ktor.server.routing.route
-import io.ktor.server.routing.routing
+import io.ktor.server.application.*
+import io.ktor.server.routing.*
 
 fun Application.setupRouting() {
 
@@ -16,7 +14,6 @@ fun Application.setupRouting() {
             deviceController()
             groupController()
             measurementController()
-            measurementControllerV2()
             loggerController()
         }
     }

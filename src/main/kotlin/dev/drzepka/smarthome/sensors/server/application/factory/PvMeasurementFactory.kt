@@ -1,12 +1,12 @@
 package dev.drzepka.smarthome.sensors.server.application.factory
 
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Phase
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Pv
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.PvMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Phase
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Pv
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.PvMeasurement
 import dev.drzepka.smarthome.sensors.server.application.util.mapOfNotNull
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import java.time.Instant
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 class PvMeasurementFactory : MeasurementFactory<PvMeasurement> {
 

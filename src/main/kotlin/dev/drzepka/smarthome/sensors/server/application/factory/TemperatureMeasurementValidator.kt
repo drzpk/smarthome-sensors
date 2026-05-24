@@ -2,9 +2,9 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.ValidationErrors
 import dev.drzepka.smarthome.sensors.server.application.ValidationResult
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
 import java.math.BigDecimal
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.v2.Measurement as MeasurementDto
+import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 class TemperatureMeasurementValidator : MeasurementValidator<TemperatureMeasurement> {
 
