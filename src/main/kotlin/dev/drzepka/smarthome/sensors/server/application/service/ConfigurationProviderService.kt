@@ -40,8 +40,8 @@ class ConfigurationProviderService {
     }
 
     internal fun loadExternalConfiguration(): Config? {
-        val path = System.getenv("CONFIG_FILE")
-            ?: System.getProperty("CONFIG_FILE")
+        val path = System.getenv("CONFIGURATION_FILE")
+            ?: System.getProperty("CONFIGURATION_FILE")
             ?: return null
         val file = File(path)
         if (!file.isFile)

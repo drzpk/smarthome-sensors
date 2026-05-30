@@ -95,20 +95,7 @@ jib {
         }
     }
     container {
-        entrypoint = listOf("sh",
-            "-c",
-            """
-                |java 
-                |-cp `cat /app/jib-classpath-file`
-                |-Dlogback.configurationFile=/app/config/logback.xml 
-                |-DEXTERNAL_CONFIG_PATH=/app/config/application.conf 
-                |${'$'}JAVA_OPTS 
-                |io.ktor.server.tomcat.EngineMain""".trimMargin().lines().joinToString(" ")
-        )
-
-        environment = mapOf(
-            "JAVA_OPTS" to ""
-        )
+        mainClass = "io.ktor.server.tomcat.jakarta.EngineMain"
         creationTime = "USE_CURRENT_TIMESTAMP"
         workingDirectory = "/app"
         labels.put("Maintainer", "dominik.1.rzepka@gmail.com")
