@@ -8,7 +8,6 @@ import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Temperat
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
-import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
 import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
 import org.assertj.core.api.BDDAssertions.catchThrowable
 import org.assertj.core.api.BDDAssertions.then
@@ -26,10 +25,13 @@ import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurem
 class MeasurementCreatorTest {
 
     private val now = Instant.parse("2026-01-01T12:00:00Z")
-    private val activeDevice = Device(Group().apply { id = 10 }).apply { active = true }
+    private val activeDevice = Device(Group().apply { id = 10 }).apply {
+        id = 1
+        active = true
+    }
 
     private val deviceRepository = mock<DeviceRepository> {
-        on { findById(eq(1)) } doReturn activeDevice
+        on { findByMac(eq("mac")) } doReturn activeDevice
     }
 
     private var lastValidatedInput: MeasurementDto? = null
@@ -46,10 +48,10 @@ class MeasurementCreatorTest {
 
     private val fakeTemperatureFactory = object : MeasurementFactory<TemperatureMeasurement> {
         override fun supports(input: MeasurementDto) = input is TemperatureMeasurement
-        override fun create(input: TemperatureMeasurement, loggerId: Int, groupId: Int, time: Instant): Measurement {
+        override fun create(input: TemperatureMeasurement, loggerId: Int, device: Device, time: Instant): Measurement {
             lastCreatedInput = input
             lastCreatedTime = time
-            return Measurement(createdAt = time, deviceId = input.deviceId, loggerId = loggerId, groupId = groupId, type = "temperature", fields = emptyMap())
+            return Measurement(createdAt = time, deviceId = device.id!!, loggerId = loggerId, groupId = device.group?.id!!, type = "temperature", fields = emptyMap())
         }
     }
 
@@ -84,7 +86,7 @@ class MeasurementCreatorTest {
     fun `should throw when no factory supports the input type`() {
         val unsupportedFactory = object : MeasurementFactory<TemperatureMeasurement> {
             override fun supports(input: MeasurementDto) = false
-            override fun create(input: TemperatureMeasurement, loggerId: Int, groupId: Int, time: Instant) =
+            override fun create(input: TemperatureMeasurement, loggerId: Int, device: Device, time: Instant) =
                 throw UnsupportedOperationException()
         }
         val creator = MeasurementCreator(
@@ -97,25 +99,26 @@ class MeasurementCreatorTest {
     }
 
     @Test
-    fun `should throw ValidationException for unknown device`() {
-        val input = validTemperatureInput(deviceId = 9999, time = now)
+    fun `should return UnknownDevice for unknown MAC`() {
+        val input = validTemperatureInput(mac = "unknown-mac", time = now)
 
-        val throwable = catchThrowable { getCreator().create(input, loggerId = 1, now = now) }
+        val result = getCreator().create(input, loggerId = 1, now = now)
 
-        then(throwable).isInstanceOf(ValidationException::class.java)
+        then(result).isInstanceOf(MeasurementCreationResult.UnknownDevice::class.java)
+        then((result as MeasurementCreationResult.UnknownDevice).mac).isEqualTo("unknown-mac")
     }
 
     @Test
-    fun `should throw ValidationException for measurement time in the future`() {
+    fun `should return ValidationFailed for measurement time in the future`() {
         val input = validTemperatureInput(time = now.plusSeconds(1))
 
-        val throwable = catchThrowable { getCreator().create(input, loggerId = 1, now = now) }
+        val result = getCreator().create(input, loggerId = 1, now = now)
 
-        then(throwable).isInstanceOf(ValidationException::class.java)
+        then(result).isInstanceOf(MeasurementCreationResult.ValidationFailed::class.java)
     }
 
     @Test
-    fun `should throw ValidationException when validator returns invalid result`() {
+    fun `should return ValidationFailed when validator returns invalid result`() {
         val rejectingValidator = object : MeasurementValidator<TemperatureMeasurement> {
             override fun supports(input: MeasurementDto) = input is TemperatureMeasurement
             override fun validate(input: TemperatureMeasurement) = ValidationResult.Invalid(emptyList())
@@ -125,9 +128,9 @@ class MeasurementCreatorTest {
             listOf(rejectingValidator), listOf(fakeTemperatureFactory)
         )
 
-        val throwable = catchThrowable { creator.create(validTemperatureInput(time = now), loggerId = 1, now = now) }
+        val result = creator.create(validTemperatureInput(time = now), loggerId = 1, now = now)
 
-        then(throwable).isInstanceOf(ValidationException::class.java)
+        then(result).isInstanceOf(MeasurementCreationResult.ValidationFailed::class.java)
     }
 
     @Test
@@ -136,9 +139,9 @@ class MeasurementCreatorTest {
         var pvCreated = false
         val fakePvFactory = object : MeasurementFactory<PvMeasurement> {
             override fun supports(input: MeasurementDto) = input is PvMeasurement
-            override fun create(input: PvMeasurement, loggerId: Int, groupId: Int, time: Instant): Measurement {
+            override fun create(input: PvMeasurement, loggerId: Int, device: Device, time: Instant): Measurement {
                 pvCreated = true
-                return Measurement(createdAt = time, deviceId = input.deviceId, loggerId = loggerId, groupId = groupId, type = "pv", fields = emptyMap())
+                return Measurement(createdAt = time, deviceId = device.id!!, loggerId = loggerId, groupId = device.group?.id!!, type = "pv", fields = emptyMap())
             }
         }
         val creator = MeasurementCreator(
@@ -150,15 +153,15 @@ class MeasurementCreatorTest {
         then(pvCreated).isTrue()
     }
 
-    private fun validTemperatureInput(deviceId: Int = 1, time: Instant? = now) = TemperatureMeasurement(
-        deviceId = deviceId,
+    private fun validTemperatureInput(mac: String = "mac", time: Instant? = now) = TemperatureMeasurement(
+        mac = mac,
         time = time,
         temperature = BigDecimal("21.0"),
         humidity = BigDecimal("55.0")
     )
 
-    private fun validPvInput(deviceId: Int = 1, time: Instant? = now) = PvMeasurement(
-        deviceId = deviceId,
+    private fun validPvInput(mac: String = "mac", time: Instant? = now) = PvMeasurement(
+        mac = mac,
         time = time,
         totalPower = 3000,
         energyToday = BigDecimal("12.5"),

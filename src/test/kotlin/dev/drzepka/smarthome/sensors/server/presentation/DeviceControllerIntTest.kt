@@ -165,7 +165,7 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
                     "measurements": [
                         {
                             "type": "PV",
-                            "deviceId": ${device.id},
+                            "mac": "${device.mac}",
                             "time": null,
                             "totalPower": 3000,
                             "energyToday": 12.5,

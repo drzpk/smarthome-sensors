@@ -15,12 +15,12 @@ class CreateMeasurementsRequest {
     JsonSubTypes.Type(value = PvMeasurement::class, name = "PV"),
 )
 interface Measurement {
-    val deviceId: Int
+    val mac: String
     val time: Instant?
 }
 
 class TemperatureMeasurement(
-    override val deviceId: Int,
+    override val mac: String,
     override val time: Instant?,
     val temperature: BigDecimal = BigDecimal.ZERO,
     val humidity: BigDecimal = BigDecimal.ZERO,
@@ -29,7 +29,7 @@ class TemperatureMeasurement(
 ) : Measurement
 
 data class PvMeasurement(
-    override val deviceId: Int,
+    override val mac: String,
     override val time: Instant?,
     val totalPower: Int,
     val energyToday: BigDecimal,

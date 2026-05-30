@@ -22,7 +22,7 @@ class PvMeasurementValidatorTest {
 
     @Test
     fun `should not support other measurement types`() {
-        val temperature = TemperatureMeasurement(deviceId = 1, time = null)
+        val temperature = TemperatureMeasurement(mac = "mac", time = null)
         then(validator.supports(temperature)).isFalse()
     }
 
@@ -66,7 +66,7 @@ class PvMeasurementValidatorTest {
         pv1: Pv? = validPv(),
         pv2: Pv? = validPv()
     ) = PvMeasurement(
-        deviceId = 1,
+        mac = "mac",
         time = Instant.parse("2026-01-01T12:00:00Z"),
         totalPower = totalPower,
         energyToday = energyToday,

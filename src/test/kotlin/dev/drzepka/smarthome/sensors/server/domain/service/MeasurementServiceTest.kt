@@ -1,16 +1,15 @@
 package dev.drzepka.smarthome.sensors.server.domain.service
 
 import com.typesafe.config.ConfigFactory
-import dev.drzepka.smarthome.sensors.server.application.ValidationErrors
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreationResult
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
 import dev.drzepka.smarthome.sensors.server.application.service.ConfigurationProviderService
 import dev.drzepka.smarthome.sensors.server.application.service.MeasurementService
 import dev.drzepka.smarthome.sensors.server.application.service.TaskScheduler
 import dev.drzepka.smarthome.sensors.server.domain.entity.Logger
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
-import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
 import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import kotlinx.coroutines.runBlocking
@@ -61,13 +60,16 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should create measurements - positive case`() = runBlocking {
-        val measurement1 = getMeasurement(0)
-        val measurement2 = getMeasurement(0)
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+        val measurement1 = getMeasurement(0, deviceId = 1)
+        val measurement2 = getMeasurement(0, deviceId = 2)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(
+            MeasurementCreationResult.Success(measurement1),
+            MeasurementCreationResult.Success(measurement2)
+        )
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
-        request.measurements.add(getRequestMeasurement(2))
+        request.measurements.add(getRequestMeasurement("mac-1"))
+        request.measurements.add(getRequestMeasurement("mac-2"))
 
         val status = getService().createMeasurements(request, getLogger())
 
@@ -82,10 +84,10 @@ internal class MeasurementServiceTest {
     @Test
     fun `should save live data when measurement is accepted`() = runBlocking {
         val measurement = getMeasurement(0)
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(MeasurementCreationResult.Success(measurement))
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement())
 
         getService().createMeasurements(request, getLogger())
 
@@ -96,11 +98,14 @@ internal class MeasurementServiceTest {
     fun `should create measurements - duplicates`() = runBlocking {
         val measurement1 = getMeasurement(0)
         val measurement2 = getMeasurement(0)
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(
+            MeasurementCreationResult.Success(measurement1),
+            MeasurementCreationResult.Success(measurement2)
+        )
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
-        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement())
+        request.measurements.add(getRequestMeasurement())
 
         val status = getService().createMeasurements(request, getLogger())
 
@@ -117,11 +122,14 @@ internal class MeasurementServiceTest {
     fun `should save to live data repository even when measurement is rate limited`() = runBlocking {
         val measurement1 = getMeasurement(0)
         val measurement2 = getMeasurement(0)
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(
+            MeasurementCreationResult.Success(measurement1),
+            MeasurementCreationResult.Success(measurement2)
+        )
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
-        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement())
+        request.measurements.add(getRequestMeasurement())
 
         getService().createMeasurements(request, getLogger())
 
@@ -131,10 +139,12 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should create measurements - validation errors`() = runBlocking {
-        whenever(measurementCreator.create(any(), any(), any())).thenThrow(ValidationException(ValidationErrors()))
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(
+            MeasurementCreationResult.ValidationFailed(emptyList())
+        )
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement())
 
         val status = getService().createMeasurements(request, getLogger())
 
@@ -153,7 +163,7 @@ internal class MeasurementServiceTest {
         ).thenThrow(IllegalStateException("something bad happened"))
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement())
 
         val status = getService().createMeasurements(request, getLogger())
 
@@ -168,10 +178,10 @@ internal class MeasurementServiceTest {
     @Test
     fun `should store measurements`() = runBlocking {
         val measurement = getMeasurement(0)
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(MeasurementCreationResult.Success(measurement))
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement())
 
         val service = getService()
 
@@ -190,14 +200,17 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should store measurements by groups`() = runBlocking {
-        val measurement1 = getMeasurement(0)
-        val measurement2 = getMeasurement(1)
+        val measurement1 = getMeasurement(0, deviceId = 1)
+        val measurement2 = getMeasurement(1, deviceId = 2)
 
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement1, measurement2)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(
+            MeasurementCreationResult.Success(measurement1),
+            MeasurementCreationResult.Success(measurement2)
+        )
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
-        request.measurements.add(getRequestMeasurement(2))
+        request.measurements.add(getRequestMeasurement("mac-1"))
+        request.measurements.add(getRequestMeasurement("mac-2"))
 
         val service = getService()
 
@@ -215,11 +228,11 @@ internal class MeasurementServiceTest {
         val measurementTime = Instant.parse("2026-01-01T12:00:00Z")
         wheneverBlocking { measurementRepository.findLatestMeasurementTime(eq(0), eq(1), any()) } doReturn dbTime
 
-        val measurement = getMeasurement(0, measurementTime)
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
+        val measurement = getMeasurement(0, createdAt = measurementTime)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(MeasurementCreationResult.Success(measurement))
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1, time = measurementTime))
+        request.measurements.add(getRequestMeasurement(time = measurementTime))
 
         val status = getService().createMeasurements(request, getLogger())
 
@@ -230,11 +243,11 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should accept measurement when no recent database measurement exists for device`(): Unit = runBlocking {
-        val measurement = getMeasurement(0, Instant.parse("2026-01-01T12:00:00Z"))
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(measurement)
+        val measurement = getMeasurement(0, createdAt = Instant.parse("2026-01-01T12:00:00Z"))
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(MeasurementCreationResult.Success(measurement))
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1))
+        request.measurements.add(getRequestMeasurement())
 
         val status = getService().createMeasurements(request, getLogger())
 
@@ -244,13 +257,16 @@ internal class MeasurementServiceTest {
 
     @Test
     fun `should initialize tracker from database only once per device`() = runBlocking {
-        val m1 = getMeasurement(0, Instant.parse("2026-01-01T12:00:00Z"))
-        val m2 = getMeasurement(0, Instant.parse("2026-01-01T12:01:00Z"))
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(m1, m2)
+        val m1 = getMeasurement(0, createdAt = Instant.parse("2026-01-01T12:00:00Z"))
+        val m2 = getMeasurement(0, createdAt = Instant.parse("2026-01-01T12:01:00Z"))
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(
+            MeasurementCreationResult.Success(m1),
+            MeasurementCreationResult.Success(m2)
+        )
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1, time = Instant.parse("2026-01-01T12:00:00Z")))
-        request.measurements.add(getRequestMeasurement(1, time = Instant.parse("2026-01-01T12:01:00Z")))
+        request.measurements.add(getRequestMeasurement(time = Instant.parse("2026-01-01T12:00:00Z")))
+        request.measurements.add(getRequestMeasurement(time = Instant.parse("2026-01-01T12:01:00Z")))
 
         getService().createMeasurements(request, getLogger())
 
@@ -263,15 +279,19 @@ internal class MeasurementServiceTest {
         val t2 = Instant.parse("2026-01-01T12:00:05Z")
         val t3 = Instant.parse("2026-01-01T12:00:15Z")
 
-        val m1 = getMeasurement(0, t1)
-        val m2 = getMeasurement(0, t2)
-        val m3 = getMeasurement(0, t3)
-        whenever(measurementCreator.create(any(), any(), any())).thenReturn(m1, m2, m3)
+        val m1 = getMeasurement(0, createdAt = t1)
+        val m2 = getMeasurement(0, createdAt = t2)
+        val m3 = getMeasurement(0, createdAt = t3)
+        whenever(measurementCreator.create(any(), any(), any())).thenReturn(
+            MeasurementCreationResult.Success(m1),
+            MeasurementCreationResult.Success(m2),
+            MeasurementCreationResult.Success(m3)
+        )
 
         val request = CreateMeasurementsRequest()
-        request.measurements.add(getRequestMeasurement(1, time = t3))
-        request.measurements.add(getRequestMeasurement(1, time = t1))
-        request.measurements.add(getRequestMeasurement(1, time = t2))
+        request.measurements.add(getRequestMeasurement(time = t3))
+        request.measurements.add(getRequestMeasurement(time = t1))
+        request.measurements.add(getRequestMeasurement(time = t2))
 
         val status = getService().createMeasurements(request, getLogger())
 
@@ -290,11 +310,11 @@ internal class MeasurementServiceTest {
         }
     }
 
-    private fun getMeasurement(groupId: Int, createdAt: Instant = Instant.now()): Measurement =
-        Measurement(createdAt, 1, 2, groupId, "temperature", emptyMap())
+    private fun getMeasurement(groupId: Int, deviceId: Int = 1, createdAt: Instant = Instant.now()): Measurement =
+        Measurement(createdAt, deviceId, 2, groupId, "temperature", emptyMap())
 
-    private fun getRequestMeasurement(deviceId: Int, time: Instant? = Instant.parse("2026-01-01T12:00:00Z")): TemperatureMeasurement = TemperatureMeasurement(
-        deviceId = deviceId,
+    private fun getRequestMeasurement(mac: String = "mac", time: Instant? = Instant.parse("2026-01-01T12:00:00Z")): TemperatureMeasurement = TemperatureMeasurement(
+        mac = mac,
         time = time,
         temperature = BigDecimal("21.0"),
         humidity = BigDecimal("55.0")

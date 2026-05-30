@@ -92,6 +92,24 @@ class ExposedDeviceRepositoryIntTest : BaseIntegrationTest() {
     }
 
     @Test
+    fun `should return device when found by mac`() {
+        val group = savedGroup()
+        transaction { repository.save(device("sensor-01", group)) }
+
+        val result = transaction { repository.findByMac("AA:BB:CC:DD:EE:FF") }
+
+        then(result).isNotNull
+        then(result!!.name).isEqualTo("sensor-01")
+    }
+
+    @Test
+    fun `should return null when mac is unknown`() {
+        val result = transaction { repository.findByMac("FF:FF:FF:FF:FF:FF") }
+
+        then(result).isNull()
+    }
+
+    @Test
     fun `should return device when name and active match`() {
         val group = savedGroup()
         transaction { repository.save(device("sensor-01", group, active = true)) }

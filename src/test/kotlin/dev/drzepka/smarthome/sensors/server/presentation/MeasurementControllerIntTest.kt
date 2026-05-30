@@ -20,7 +20,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
 
     @Test
     fun `should accept measurements and return counts`() = testApp { client ->
-        val (loggerId, password, deviceId) = setup(client)
+        val (loggerId, password, device) = setup(client)
 
         val response = client.post("/api/measurements") {
             basicAuth(loggerId, password)
@@ -30,7 +30,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
                     "measurements": [
                         {
                             "type": "TEMPERATURE",
-                            "deviceId": $deviceId,
+                            "mac": "${device.mac}",
                             "time": "2026-01-15T10:30:00Z",
                             "temperature": 21.0,
                             "humidity": 55.0,
@@ -49,7 +49,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
 
         measurementService.storeMeasurements()
 
-        val records = queryMeasurements("temperature", deviceId, "2026-01-15T00:00:00Z", "2026-01-16T00:00:00Z")
+        val records = queryMeasurements("temperature", device.id, "2026-01-15T00:00:00Z", "2026-01-16T00:00:00Z")
         val fieldMap = records.associate { it.field!! to it.value }
         then(records.first().time).isEqualTo(Instant.parse("2026-01-15T10:30:00Z"))
         then(fieldMap["temperature"]).isEqualTo(21.0)
@@ -60,7 +60,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
 
     @Test
     fun `should count validation errors`() = testApp { client ->
-        val (loggerId, password, deviceId) = setup(client)
+        val (loggerId, password, device) = setup(client)
 
         val response = client.post("/api/measurements") {
             basicAuth(loggerId, password)
@@ -70,7 +70,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
                     "measurements": [
                         {
                             "type": "TEMPERATURE",
-                            "deviceId": $deviceId,
+                            "mac": "${device.mac}",
                             "time": null,
                             "temperature": 999.0,
                             "humidity": 55.0
@@ -109,7 +109,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
         then(response.status).isEqualTo(HttpStatusCode.Unauthorized)
     }
 
-    private suspend fun setup(client: HttpClient): Triple<String, String, Int> {
+    private suspend fun setup(client: HttpClient): Triple<String, String, DeviceResource> {
         val groupId = client.post("/api/groups") {
             contentType(ContentType.Application.Json)
             setBody("""
@@ -143,7 +143,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
             """.trimIndent())
         }.body<LoggerResource>()
 
-        return Triple(logger.id.toString(), logger.password!!, device.id)
+        return Triple(logger.id.toString(), logger.password!!, device)
     }
 
     private suspend fun queryMeasurements(

@@ -22,15 +22,10 @@ class MeasurementCommonValidatorTest {
     }
 
     @Test
-    fun `should reject null device`() {
-        assertFieldError("deviceId", validator.validate(null, now, now))
-    }
-
-    @Test
     fun `should reject inactive device`() {
         val inactiveDevice = Device(Group().apply { id = 1 }).apply { active = false }
 
-        assertFieldError("deviceId", validator.validate(inactiveDevice, now, now))
+        assertFieldError("mac", validator.validate(inactiveDevice, now, now))
     }
 
     @Test

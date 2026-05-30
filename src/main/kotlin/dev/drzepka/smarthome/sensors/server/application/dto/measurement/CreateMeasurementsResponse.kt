@@ -1,10 +1,11 @@
 package dev.drzepka.smarthome.sensors.server.application.dto.measurement
 
-class CreateMeasurementsResponse {
-    var created = 0
-    var duplicated = 0
-    var errors = 0
-
+data class CreateMeasurementsResponse(
+    val created: Int = 0,
+    val duplicated: Int = 0,
+    val errors: Int = 0,
+    val unknown: List<String> = emptyList()
+) {
     val total: Int
         get() = created + duplicated + errors
 }

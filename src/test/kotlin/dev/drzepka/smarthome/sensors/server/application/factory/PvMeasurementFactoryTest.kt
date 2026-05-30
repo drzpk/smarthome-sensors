@@ -3,6 +3,8 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Phase
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Pv
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.PvMeasurement
+import dev.drzepka.smarthome.sensors.server.domain.entity.Device
+import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -11,13 +13,14 @@ import java.time.Instant
 class PvMeasurementFactoryTest {
 
     private val factory = PvMeasurementFactory()
+    private val device = Device(Group().apply { id = 5 }).apply { id = 1 }
 
     @Test
     fun `should build measurement with correct metadata`() {
         val time = Instant.parse("2026-01-01T12:00:00Z")
         val data = validData()
 
-        val measurement = factory.create(data, loggerId = 2, groupId = 5, time = time)
+        val measurement = factory.create(data, loggerId = 2, device = device, time = time)
 
         then(measurement.createdAt).isEqualTo(time)
         then(measurement.deviceId).isEqualTo(1)
@@ -44,7 +47,7 @@ class PvMeasurementFactoryTest {
             pv2 = pv2
         )
 
-        val measurement = factory.create(data, loggerId = 1, groupId = 1, time = Instant.parse("2026-01-01T12:00:00Z"))
+        val measurement = factory.create(data, loggerId = 1, device = device, time = Instant.parse("2026-01-01T12:00:00Z"))
 
         then(measurement.fields["total_power"]).isEqualTo(2967)
         then(measurement.fields).doesNotContainKey("energy_today")
@@ -75,7 +78,7 @@ class PvMeasurementFactoryTest {
     fun `should put energy_today in live fields`() {
         val data = validData(energyToday = BigDecimal("12.5"))
 
-        val measurement = factory.create(data, loggerId = 1, groupId = 1, time = Instant.parse("2026-01-01T12:00:00Z"))
+        val measurement = factory.create(data, loggerId = 1, device = device, time = Instant.parse("2026-01-01T12:00:00Z"))
 
         then(measurement.liveFields["energy_today"]).isEqualTo(BigDecimal("12.5"))
         then(measurement.liveFields).hasSize(1)
@@ -85,7 +88,7 @@ class PvMeasurementFactoryTest {
     fun `should map null values for absent PV panels`() {
         val data = validData(pv1 = null, pv2 = null)
 
-        val measurement = factory.create(data, loggerId = 1, groupId = 1, time = Instant.parse("2026-01-01T12:00:00Z"))
+        val measurement = factory.create(data, loggerId = 1, device = device, time = Instant.parse("2026-01-01T12:00:00Z"))
 
         then(measurement.fields["pv1_voltage"]).isNull()
         then(measurement.fields["pv1_current"]).isNull()
@@ -107,7 +110,7 @@ class PvMeasurementFactoryTest {
         pv1: Pv? = Pv(voltage = 350.0f, current = 4.3f, power = 1500, energyToday = BigDecimal("6.2")),
         pv2: Pv? = Pv(voltage = 350.0f, current = 4.3f, power = 1500, energyToday = BigDecimal("6.3"))
     ) = PvMeasurement(
-        deviceId = 1,
+        mac = "mac",
         time = Instant.parse("2026-01-01T12:00:00Z"),
         totalPower = totalPower,
         energyToday = energyToday,

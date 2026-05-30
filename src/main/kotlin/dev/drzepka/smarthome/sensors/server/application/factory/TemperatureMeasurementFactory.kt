@@ -2,6 +2,7 @@ package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
 import dev.drzepka.smarthome.sensors.server.application.util.mapOfNotNull
+import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -12,12 +13,12 @@ class TemperatureMeasurementFactory : MeasurementFactory<TemperatureMeasurement>
 
     override fun supports(input: MeasurementDto) = input is TemperatureMeasurement
 
-    override fun create(input: TemperatureMeasurement, loggerId: Int, groupId: Int, time: Instant): Measurement {
+    override fun create(input: TemperatureMeasurement, loggerId: Int, device: Device, time: Instant): Measurement {
         return Measurement(
             createdAt = time,
-            deviceId = input.deviceId,
+            deviceId = device.id!!,
             loggerId = loggerId,
-            groupId = groupId,
+            groupId = device.group?.id!!,
             type = TYPE,
             fields = buildFields(input)
         )

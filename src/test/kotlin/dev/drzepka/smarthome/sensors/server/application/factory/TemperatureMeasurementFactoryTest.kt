@@ -1,6 +1,8 @@
 package dev.drzepka.smarthome.sensors.server.application.factory
 
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
+import dev.drzepka.smarthome.sensors.server.domain.entity.Device
+import dev.drzepka.smarthome.sensors.server.domain.entity.Group
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -9,13 +11,14 @@ import java.time.Instant
 class TemperatureMeasurementFactoryTest {
 
     private val factory = TemperatureMeasurementFactory()
+    private val device = Device(Group().apply { id = 5 }).apply { id = 1 }
 
     @Test
     fun `should build measurement with correct metadata`() {
         val time = Instant.parse("2026-01-01T12:00:00Z")
         val data = validData()
 
-        val measurement = factory.create(data, loggerId = 2, groupId = 5, time = time)
+        val measurement = factory.create(data, loggerId = 2, device = device, time = time)
 
         then(measurement.createdAt).isEqualTo(time)
         then(measurement.deviceId).isEqualTo(1)
@@ -33,7 +36,7 @@ class TemperatureMeasurementFactoryTest {
             batteryLevel = 84
         )
 
-        val measurement = factory.create(data, loggerId = 1, groupId = 1, time = Instant.parse("2026-01-01T12:00:00Z"))
+        val measurement = factory.create(data, loggerId = 1, device = device, time = Instant.parse("2026-01-01T12:00:00Z"))
 
         then(measurement.fields["temperature"]).isEqualTo(BigDecimal("21.21"))
         then(measurement.fields["humidity"]).isEqualTo(BigDecimal("55.49"))
@@ -45,7 +48,7 @@ class TemperatureMeasurementFactoryTest {
     fun `should build measurement without battery`() {
         val data = validData(batteryVoltage = null, batteryLevel = null)
 
-        val measurement = factory.create(data, loggerId = 1, groupId = 1, time = Instant.parse("2026-01-01T12:00:00Z"))
+        val measurement = factory.create(data, loggerId = 1, device = device, time = Instant.parse("2026-01-01T12:00:00Z"))
 
         then(measurement.fields["battery_voltage"]).isNull()
         then(measurement.fields["battery_level"]).isNull()
@@ -57,7 +60,7 @@ class TemperatureMeasurementFactoryTest {
         batteryVoltage: BigDecimal? = BigDecimal("3.7"),
         batteryLevel: Int? = 80
     ) = TemperatureMeasurement(
-        deviceId = 1,
+        mac = "mac",
         time = Instant.parse("2026-01-01T12:00:00Z"),
         temperature = temperature,
         humidity = humidity,

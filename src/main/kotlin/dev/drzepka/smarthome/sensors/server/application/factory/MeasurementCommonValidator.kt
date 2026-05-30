@@ -8,7 +8,7 @@ import java.time.Instant
 
 class MeasurementCommonValidator {
 
-    fun validate(device: Device?, time: Instant, now: Instant): ValidationResult {
+    fun validate(device: Device, time: Instant, now: Instant): ValidationResult {
         val errors = ValidationErrors()
 
         if (time.isAfter(now))
@@ -17,8 +17,8 @@ class MeasurementCommonValidator {
         if (time.isBefore(now.minus(MAXIMUM_TIME_OFFSET)))
             errors.addObjectError("Cannot create measurements older than $MAXIMUM_TIME_OFFSET")
 
-        if (device == null || !device.active)
-            errors.addFieldError("deviceId", "Device wasn't found")
+        if (!device.active)
+            errors.addFieldError("mac", "Device is not active")
 
         return if (errors.errors.isEmpty()) ValidationResult.Valid
         else ValidationResult.Invalid(errors.errors)

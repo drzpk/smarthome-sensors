@@ -16,6 +16,13 @@ class ExposedDeviceRepository(private val groupRepository: GroupRepository) : De
             ?.let { rowToEntity(it) }
     }
 
+    override fun findByMac(mac: String): Device? {
+        return Devices.selectAll()
+            .where { Devices.mac eq mac }
+            .firstOrNull()
+            ?.let { rowToEntity(it) }
+    }
+
     override fun findByNameAndActive(name: String, active: Boolean): Device? {
         return Devices.selectAll()
             .where { (Devices.name eq name) and (Devices.active eq active) }

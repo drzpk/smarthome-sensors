@@ -98,7 +98,7 @@ class TemperatureMeasurementValidatorTest {
         batteryVoltage: BigDecimal? = BigDecimal("3.7"),
         batteryLevel: Int? = 80
     ) = TemperatureMeasurement(
-        deviceId = 1,
+        mac = "mac",
         time = Instant.parse("2026-01-01T12:00:00Z"),
         temperature = temperature,
         humidity = humidity,
@@ -107,7 +107,7 @@ class TemperatureMeasurementValidatorTest {
     )
 
     private fun validPvData() = PvMeasurement(
-        deviceId = 1,
+        mac = "mac",
         time = Instant.parse("2026-01-01T12:00:00Z"),
         totalPower = 3000,
         energyToday = BigDecimal("12.5"),

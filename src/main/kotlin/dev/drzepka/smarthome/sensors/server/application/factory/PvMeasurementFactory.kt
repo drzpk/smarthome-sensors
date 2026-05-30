@@ -4,6 +4,7 @@ import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Phase
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Pv
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.PvMeasurement
 import dev.drzepka.smarthome.sensors.server.application.util.mapOfNotNull
+import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
 import java.time.Instant
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
@@ -12,12 +13,12 @@ class PvMeasurementFactory : MeasurementFactory<PvMeasurement> {
 
     override fun supports(input: MeasurementDto) = input is PvMeasurement
 
-    override fun create(input: PvMeasurement, loggerId: Int, groupId: Int, time: Instant): Measurement {
+    override fun create(input: PvMeasurement, loggerId: Int, device: Device, time: Instant): Measurement {
         return Measurement(
             createdAt = time,
-            deviceId = input.deviceId,
+            deviceId = device.id!!,
             loggerId = loggerId,
-            groupId = groupId,
+            groupId = device.group?.id!!,
             type = TYPE,
             fields = buildFields(input),
             liveFields = buildLiveFields(input)

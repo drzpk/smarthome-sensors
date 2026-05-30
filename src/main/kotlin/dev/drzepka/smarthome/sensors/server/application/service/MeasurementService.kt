@@ -2,11 +2,11 @@ package dev.drzepka.smarthome.sensors.server.application.service
 
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
+import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreationResult
 import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
 import dev.drzepka.smarthome.sensors.server.application.util.LifespanTracker
 import dev.drzepka.smarthome.sensors.server.application.util.describeErrors
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
-import dev.drzepka.smarthome.sensors.server.domain.exception.ValidationException
 import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
 import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
@@ -44,65 +44,75 @@ class MeasurementService(
         request: CreateMeasurementsRequest,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): CreateMeasurementsResponse {
-        val response = CreateMeasurementsResponse()
+        var created = 0
+        var duplicated = 0
+        var errors = 0
+        val unknown = linkedSetOf<String>()
 
         request.measurements
             .sortedWith(compareBy(nullsLast()) { it.time })
             .forEach {
-                when (addMeasurement(it, logger)) {
-                    true -> response.created++
-                    false -> response.duplicated++
-                    null -> response.errors++
+                when (val result = addMeasurement(it, logger)) {
+                    AddResult.Created -> created++
+                    AddResult.Duplicated -> duplicated++
+                    AddResult.Error -> errors++
+                    is AddResult.UnknownDevice -> {
+                        if (unknown.add(result.mac))
+                            log.warn("Device with MAC {} is not registered", result.mac)
+                    }
                 }
             }
 
         log.debug(
-            "Processed {} measurements from logger {} (created: {}, duplicated: {}, errors: {})",
-            response.total, logger.id, response.created, response.duplicated, response.errors
+            "Processed {} measurements from logger {} (created: {}, duplicated: {}, errors: {}, unknown: {})",
+            created + duplicated + errors + unknown.size, logger.id, created, duplicated, errors, unknown.size
         )
-        return response
+        return CreateMeasurementsResponse(created, duplicated, errors, unknown.toList())
     }
 
     private suspend fun addMeasurement(
         single: MeasurementDto,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
-    ): Boolean? {
+    ): AddResult {
         return try {
             doAddMeasurement(single, logger)
-        } catch (e: ValidationException) {
-            val errors = e.validationErrors
-                .describeErrors()
-                .joinToString("\n") { "    - $it" }
-            log.error("Measurement {} didn't pass validation. \n  Errors: \n{}", single, errors)
-            null
         } catch (e: Exception) {
             log.error("Error while creating measurement {}", single, e)
-            null
+            AddResult.Error
         }
     }
 
     private suspend fun doAddMeasurement(
         single: MeasurementDto,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
-    ): Boolean {
-        val deviceId = single.deviceId
-        val measurement = measurementCreator.create(single, logger.id!!, clock.instant())
-        liveDataRepository.save(measurement)
+    ): AddResult {
+        return when (val result = measurementCreator.create(single, logger.id!!, clock.instant())) {
+            is MeasurementCreationResult.UnknownDevice -> AddResult.UnknownDevice(result.mac)
+            is MeasurementCreationResult.ValidationFailed -> {
+                val errorText = result.errors.describeErrors().joinToString("\n") { "    - $it" }
+                log.error("Measurement {} didn't pass validation. \n  Errors: \n{}", single, errorText)
+                AddResult.Error
+            }
+            is MeasurementCreationResult.Success -> {
+                val measurement = result.measurement
+                val deviceId = measurement.deviceId
+                liveDataRepository.save(measurement)
 
-        if (!measurementTracker.isTracked(deviceId))
-            initializeTrackerForDevice(measurement.groupId, deviceId, measurement.createdAt)
+                if (!measurementTracker.isTracked(deviceId))
+                    initializeTrackerForDevice(measurement.groupId, deviceId, measurement.createdAt)
 
-        if (measurementTracker.existsOrTrack(measurement.createdAt, deviceId)) {
-            log.debug(
-                "Measurement from device {} has been already created within the minimum interval",
-                deviceId
-            )
-            return false
+                if (measurementTracker.existsOrTrack(measurement.createdAt, deviceId)) {
+                    log.debug(
+                        "Measurement from device {} has been already created within the minimum interval",
+                        deviceId
+                    )
+                    return AddResult.Duplicated
+                }
+
+                queueMutex.withLock { queue.add(measurement) }
+                AddResult.Created
+            }
         }
-
-        queueMutex.withLock { queue.add(measurement) }
-
-        return true
     }
 
     private suspend fun initializeTrackerForDevice(groupId: Int, deviceId: Int, referenceTime: Instant) {
@@ -131,5 +141,12 @@ class MeasurementService(
                     log.error("Error while storing {} measurements for group {}", group.value.size, group.key)
                 }
             }
+    }
+
+    private sealed interface AddResult {
+        object Created : AddResult
+        object Duplicated : AddResult
+        object Error : AddResult
+        data class UnknownDevice(val mac: String) : AddResult
     }
 }

@@ -4,6 +4,7 @@ import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 
 interface DeviceRepository {
     fun findById(id: Int): Device?
+    fun findByMac(mac: String): Device?
     fun findByNameAndActive(name: String, active: Boolean): Device?
     fun findAll(active: Boolean? = null): Collection<Device>
     fun countByGroupId(groupId: Int): Int
