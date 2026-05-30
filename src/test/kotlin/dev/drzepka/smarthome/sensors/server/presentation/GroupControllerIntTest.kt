@@ -1,9 +1,7 @@
 package dev.drzepka.smarthome.sensors.server.presentation
 
 import dev.drzepka.smarthome.sensors.server.BaseIntegrationTest
-import dev.drzepka.smarthome.sensors.server.application.dto.group.CreateGroupRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.group.GroupResource
-import dev.drzepka.smarthome.sensors.server.application.dto.group.UpdateGroupRequest
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -16,10 +14,12 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     fun `should create group`() = testApp { client ->
         val response = client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply {
-                name = "Living Room"
-                description = "Sensors in the living room"
-            })
+            setBody("""
+                {
+                    "name": "Living Room",
+                    "description": "Sensors in the living room"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.OK)
@@ -33,7 +33,11 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     fun `should return 422 when group name is missing`() = testApp { client ->
         val response = client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { description = "desc" })
+            setBody("""
+                {
+                    "description": "desc"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
@@ -43,11 +47,21 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     fun `should list all groups`() = testApp { client ->
         client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { name = "Group A"; description = "desc" })
+            setBody("""
+                {
+                    "name": "Group A",
+                    "description": "desc"
+                }
+            """.trimIndent())
         }
         client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { name = "Group B"; description = "desc" })
+            setBody("""
+                {
+                    "name": "Group B",
+                    "description": "desc"
+                }
+            """.trimIndent())
         }
 
         val response = client.get("/api/groups")
@@ -62,7 +76,12 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     fun `should get group by id`() = testApp { client ->
         val created = client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { name = "Bedroom"; description = "desc" })
+            setBody("""
+                {
+                    "name": "Bedroom",
+                    "description": "desc"
+                }
+            """.trimIndent())
         }.body<GroupResource>()
 
         val response = client.get("/api/groups/${created.id}")
@@ -83,12 +102,21 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     fun `should update group`() = testApp { client ->
         val created = client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { name = "Old Name"; description = "old" })
+            setBody("""
+                {
+                    "name": "Old Name",
+                    "description": "old"
+                }
+            """.trimIndent())
         }.body<GroupResource>()
 
         val response = client.patch("/api/groups/${created.id}") {
             contentType(ContentType.Application.Json)
-            setBody(UpdateGroupRequest().apply { name = "New Name" })
+            setBody("""
+                {
+                    "name": "New Name"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.OK)
@@ -100,7 +128,11 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     fun `should return 404 when updating unknown group`() = testApp { client ->
         val response = client.patch("/api/groups/9999") {
             contentType(ContentType.Application.Json)
-            setBody(UpdateGroupRequest().apply { name = "New Name" })
+            setBody("""
+                {
+                    "name": "New Name"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.NotFound)
@@ -110,7 +142,12 @@ class GroupControllerIntTest : BaseIntegrationTest() {
     fun `should delete group`() = testApp { client ->
         val created = client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { name = "ToDelete"; description = "desc" })
+            setBody("""
+                {
+                    "name": "ToDelete",
+                    "description": "desc"
+                }
+            """.trimIndent())
         }.body<GroupResource>()
 
         val deleteResponse = client.delete("/api/groups/${created.id}")

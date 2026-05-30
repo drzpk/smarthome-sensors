@@ -1,9 +1,8 @@
 package dev.drzepka.smarthome.sensors.server.presentation
 
 import dev.drzepka.smarthome.sensors.server.BaseIntegrationTest
-import dev.drzepka.smarthome.sensors.server.application.dto.logger.CreateLoggerRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResource
-import dev.drzepka.smarthome.sensors.server.application.dto.logger.UpdateLoggerRequest
+import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -24,10 +23,12 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
     fun `should create logger and return generated password`() = testApp { client ->
         val response = client.post("/api/loggers") {
             contentType(ContentType.Application.Json)
-            setBody(CreateLoggerRequest().apply {
-                name = "garage-sensor"
-                description = "Garage temperature sensor"
-            })
+            setBody("""
+                {
+                    "name": "garage-sensor",
+                    "description": "Garage temperature sensor"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.Created)
@@ -41,7 +42,11 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
     fun `should return 422 when logger name is missing`() = testApp { client ->
         val response = client.post("/api/loggers") {
             contentType(ContentType.Application.Json)
-            setBody(CreateLoggerRequest().apply { description = "desc" })
+            setBody("""
+                {
+                    "description": "desc"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
@@ -86,7 +91,11 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
 
         val response = client.patch("/api/loggers/${created.id}") {
             contentType(ContentType.Application.Json)
-            setBody(UpdateLoggerRequest().apply { name = "new-name" })
+            setBody("""
+                {
+                    "name": "new-name"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.OK)
@@ -97,7 +106,11 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
     fun `should return 404 when updating unknown logger`() = testApp { client ->
         val response = client.patch("/api/loggers/9999") {
             contentType(ContentType.Application.Json)
-            setBody(UpdateLoggerRequest().apply { name = "new-name" })
+            setBody("""
+                {
+                    "name": "new-name"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.NotFound)
@@ -138,13 +151,15 @@ class LoggerControllerIntTest : BaseIntegrationTest() {
         then(response.status).isEqualTo(HttpStatusCode.NotFound)
     }
 
-    private suspend fun createLogger(client: io.ktor.client.HttpClient, name: String): LoggerResource {
+    private suspend fun createLogger(client: HttpClient, name: String): LoggerResource {
         return client.post("/api/loggers") {
             contentType(ContentType.Application.Json)
-            setBody(CreateLoggerRequest().apply {
-                this.name = name
-                description = "Integration test logger"
-            })
+            setBody("""
+                {
+                    "name": "$name",
+                    "description": "Integration test logger"
+                }
+            """.trimIndent())
         }.body()
     }
 }

@@ -32,6 +32,7 @@ dependencies {
     implementation(libs.ktor.server.status.pages)
     implementation(libs.ktor.serialization.jackson)
     implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.call.logging)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
     implementation(libs.exposed.core)
@@ -61,7 +62,6 @@ dependencies {
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.influxdb)
-    // Required at compile time: Testcontainers' GenericContainer implements JUnit 4's TestRule
 }
 
 allOpen {

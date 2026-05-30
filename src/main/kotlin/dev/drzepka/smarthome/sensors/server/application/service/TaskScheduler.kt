@@ -39,7 +39,7 @@ class TaskScheduler(private val clock: Clock = Clock.systemUTC()) {
 
             var nextPlannedExecution = clock.instant()
             while (isActive(name)) {
-                log.info("Executing task '{}'", name)
+                log.debug("Executing task '{}'", name)
 
                 execute(name, task)
 

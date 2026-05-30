@@ -1,21 +1,19 @@
 package dev.drzepka.smarthome.sensors.server.presentation
 
+import com.influxdb.query.FluxRecord
 import dev.drzepka.smarthome.sensors.server.BaseIntegrationTest
-import dev.drzepka.smarthome.sensors.server.application.dto.device.CreateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.device.DeviceResource
-import dev.drzepka.smarthome.sensors.server.application.dto.group.CreateGroupRequest
-import dev.drzepka.smarthome.sensors.server.application.dto.logger.CreateLoggerRequest
+import dev.drzepka.smarthome.sensors.server.application.dto.group.GroupResource
 import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResource
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsResponse
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.channels.toList
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
-import java.math.BigDecimal
+import java.time.Instant
 import java.util.*
 
 class MeasurementControllerIntTest : BaseIntegrationTest() {
@@ -27,22 +25,37 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
         val response = client.post("/api/measurements") {
             basicAuth(loggerId, password)
             contentType(ContentType.Application.Json)
-            setBody(CreateMeasurementsRequest().apply {
-                measurements.add(TemperatureMeasurement(
-                    deviceId = deviceId,
-                    time = null,
-                    temperature = BigDecimal("21.0"),
-                    humidity = BigDecimal("55.0"),
-                    batteryVoltage = BigDecimal("3.7"),
-                    batteryLevel = 90
-                ))
-            })
+            setBody("""
+                {
+                    "measurements": [
+                        {
+                            "type": "TEMPERATURE",
+                            "deviceId": $deviceId,
+                            "time": "2026-01-15T10:30:00Z",
+                            "temperature": 21.0,
+                            "humidity": 55.0,
+                            "batteryVoltage": 3.7,
+                            "batteryLevel": 90
+                        }
+                    ]
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.OK)
         val body = response.body<CreateMeasurementsResponse>()
         then(body.created).isEqualTo(1)
         then(body.errors).isEqualTo(0)
+
+        measurementService.storeMeasurements()
+
+        val records = queryMeasurements("temperature", deviceId, "2026-01-15T00:00:00Z", "2026-01-16T00:00:00Z")
+        val fieldMap = records.associate { it.field!! to it.value }
+        then(records.first().time).isEqualTo(Instant.parse("2026-01-15T10:30:00Z"))
+        then(fieldMap["temperature"]).isEqualTo(21.0)
+        then(fieldMap["humidity"]).isEqualTo(55.0)
+        then(fieldMap["battery_voltage"]).isEqualTo(3.7)
+        then(fieldMap["battery_level"]).isEqualTo(90L)
     }
 
     @Test
@@ -52,14 +65,19 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
         val response = client.post("/api/measurements") {
             basicAuth(loggerId, password)
             contentType(ContentType.Application.Json)
-            setBody(CreateMeasurementsRequest().apply {
-                measurements.add(TemperatureMeasurement(
-                    deviceId = deviceId,
-                    time = null,
-                    temperature = BigDecimal("999.0"),  // out of range
-                    humidity = BigDecimal("55.0")
-                ))
-            })
+            setBody("""
+                {
+                    "measurements": [
+                        {
+                            "type": "TEMPERATURE",
+                            "deviceId": $deviceId,
+                            "time": null,
+                            "temperature": 999.0,
+                            "humidity": 55.0
+                        }
+                    ]
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.OK)
@@ -72,7 +90,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
     fun `should return 401 without credentials`() = testApp { client ->
         val response = client.post("/api/measurements") {
             contentType(ContentType.Application.Json)
-            setBody(CreateMeasurementsRequest())
+            setBody("""{"measurements": []}""")
         }
 
         then(response.status).isEqualTo(HttpStatusCode.Unauthorized)
@@ -85,7 +103,7 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
         val response = client.post("/api/measurements") {
             basicAuth(loggerId, "wrong-password")
             contentType(ContentType.Application.Json)
-            setBody(CreateMeasurementsRequest())
+            setBody("""{"measurements": []}""")
         }
 
         then(response.status).isEqualTo(HttpStatusCode.Unauthorized)
@@ -94,26 +112,57 @@ class MeasurementControllerIntTest : BaseIntegrationTest() {
     private suspend fun setup(client: HttpClient): Triple<String, String, Int> {
         val groupId = client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { name = "Test Group"; description = "desc" })
-        }.body<dev.drzepka.smarthome.sensors.server.application.dto.group.GroupResource>().id
+            setBody("""
+                {
+                    "name": "Test Group",
+                    "description": "desc"
+                }
+            """.trimIndent())
+        }.body<GroupResource>().id
 
         val device = client.post("/api/devices") {
             contentType(ContentType.Application.Json)
-            setBody(CreateDeviceRequest().apply {
-                name = "test-device"
-                description = "desc"
-                type = "temperature"
-                mac = "AA:BB:CC:DD:EE:FF"
-                this.groupId = groupId
-            })
+            setBody("""
+                {
+                    "name": "test-device",
+                    "description": "desc",
+                    "type": "temperature",
+                    "mac": "AA:BB:CC:DD:EE:FF",
+                    "groupId": $groupId
+                }
+            """.trimIndent())
         }.body<DeviceResource>()
 
         val logger = client.post("/api/loggers") {
             contentType(ContentType.Application.Json)
-            setBody(CreateLoggerRequest().apply { name = "test-logger"; description = "desc" })
+            setBody("""
+                {
+                    "name": "test-logger",
+                    "description": "desc"
+                }
+            """.trimIndent())
         }.body<LoggerResource>()
 
         return Triple(logger.id.toString(), logger.password!!, device.id)
+    }
+
+    private suspend fun queryMeasurements(
+        measurement: String,
+        deviceId: Int,
+        rangeStart: String,
+        rangeStop: String
+    ): List<FluxRecord> {
+        Thread.sleep(500)
+        val flux = """
+            from(bucket: "$INFLUX_BUCKET")
+              |> range(start: $rangeStart, stop: $rangeStop)
+              |> filter(fn: (r) => r._measurement == "$measurement")
+              |> filter(fn: (r) => r["device"] == "$deviceId")
+        """.trimIndent()
+        val client = createInfluxClient()
+        val records = client.getQueryKotlinApi().query(flux, INFLUX_ORG).toList()
+        client.close()
+        return records
     }
 
     private fun HttpRequestBuilder.basicAuth(username: String, password: String) {

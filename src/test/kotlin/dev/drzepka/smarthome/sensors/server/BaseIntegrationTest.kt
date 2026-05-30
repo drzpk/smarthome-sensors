@@ -32,16 +32,22 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.BeforeEach
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.Koin
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.testcontainers.containers.InfluxDBContainer
 import org.testcontainers.utility.DockerImageName
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.*
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation as ClientContentNegotiation
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 
 abstract class BaseIntegrationTest {
+
+    protected lateinit var measurementService: MeasurementService
 
     @BeforeEach
     fun resetDatabase() {
@@ -77,6 +83,7 @@ abstract class BaseIntegrationTest {
         install(Koin) {
             modules(testKoinModule())
         }
+        measurementService = get()
         setupSecurity()
         setupRouting()
         setupStatusPages()
@@ -84,7 +91,7 @@ abstract class BaseIntegrationTest {
 
     private fun testKoinModule() = module {
         single { DeviceService(get(), get()) }
-        single { MeasurementService(get(), get(), get(), get(), get()) }
+        single { MeasurementService(get(), get(), get(), get(), get(), TEST_CLOCK) }
         single { LoggerService(get(), get(), get()) }
         single { GroupService(get(), get()) }
         single { PasswordGeneratorService(get()) }
@@ -111,6 +118,8 @@ abstract class BaseIntegrationTest {
             // Setting UTC here ensures timestamps round-trip correctly in tests.
             TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
         }
+
+        val TEST_CLOCK: Clock = Clock.fixed(Instant.parse("2026-01-15T11:00:00Z"), ZoneOffset.UTC)
 
         const val INFLUX_ADMIN_TOKEN = "test-admin-token"
         const val INFLUX_ORG = "test-org"

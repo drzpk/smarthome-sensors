@@ -25,6 +25,10 @@
         <appender-ref ref="CONSOLE"/>
     </root>
 
+    <logger name="REQUEST_LOGGER" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
     <logger name="Exposed" level="OFF" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>

@@ -12,6 +12,7 @@ import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementReposit
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
@@ -21,7 +22,8 @@ class MeasurementService(
     taskScheduler: TaskScheduler,
     private val measurementCreator: MeasurementCreator,
     private val measurementRepository: MeasurementRepository,
-    private val liveDataRepository: LiveDataRepository
+    private val liveDataRepository: LiveDataRepository,
+    private val clock: Clock = Clock.systemUTC()
 ) {
     private val log by Logger()
     private val queue = ArrayDeque<Measurement>()
@@ -85,7 +87,7 @@ class MeasurementService(
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger
     ): Boolean {
         val deviceId = single.deviceId
-        val measurement = measurementCreator.create(single, logger.id!!)
+        val measurement = measurementCreator.create(single, logger.id!!, clock.instant())
         liveDataRepository.save(measurement)
 
         if (!measurementTracker.isTracked(deviceId))
@@ -114,7 +116,7 @@ class MeasurementService(
             log.debug("Initialized tracker for device {} with latest DB measurement at {}", deviceId, latestTime)
     }
 
-    private suspend fun storeMeasurements() {
+    internal suspend fun storeMeasurements() {
         log.debug("Storing {} measurements", queue.size)
         val clone = queueMutex.withLock {
             val ret = ArrayList(queue)

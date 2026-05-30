@@ -1,23 +1,15 @@
 package dev.drzepka.smarthome.sensors.server.presentation
 
 import dev.drzepka.smarthome.sensors.server.BaseIntegrationTest
-import dev.drzepka.smarthome.sensors.server.application.dto.device.CreateDeviceRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.device.DeviceResource
-import dev.drzepka.smarthome.sensors.server.application.dto.device.UpdateDeviceRequest
-import dev.drzepka.smarthome.sensors.server.application.dto.group.CreateGroupRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.group.GroupResource
-import dev.drzepka.smarthome.sensors.server.application.dto.logger.CreateLoggerRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.logger.LoggerResource
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Phase
-import dev.drzepka.smarthome.sensors.server.application.dto.measurement.PvMeasurement
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
-import java.math.BigDecimal
 import java.util.*
 
 class DeviceControllerIntTest : BaseIntegrationTest() {
@@ -28,13 +20,15 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
 
         val response = client.post("/api/devices") {
             contentType(ContentType.Application.Json)
-            setBody(CreateDeviceRequest().apply {
-                name = "thermometer-01"
-                description = "Main thermometer"
-                type = "temperature"
-                mac = "AA:BB:CC:DD:EE:FF"
-                groupId = group.id
-            })
+            setBody("""
+                {
+                    "name": "thermometer-01",
+                    "description": "Main thermometer",
+                    "type": "temperature",
+                    "mac": "AA:BB:CC:DD:EE:FF",
+                    "groupId": ${group.id}
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.OK)
@@ -51,12 +45,14 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
 
         val response = client.post("/api/devices") {
             contentType(ContentType.Application.Json)
-            setBody(CreateDeviceRequest().apply {
-                description = "desc"
-                type = "temperature"
-                mac = "AA:BB:CC:DD:EE:FF"
-                groupId = group.id
-            })
+            setBody("""
+                {
+                    "description": "desc",
+                    "type": "temperature",
+                    "mac": "AA:BB:CC:DD:EE:FF",
+                    "groupId": ${group.id}
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.UnprocessableEntity)
@@ -102,7 +98,11 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
 
         val response = client.patch("/api/devices/${created.id}") {
             contentType(ContentType.Application.Json)
-            setBody(UpdateDeviceRequest().apply { name = "new-name" })
+            setBody("""
+                {
+                    "name": "new-name"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.OK)
@@ -113,7 +113,11 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
     fun `should return 404 when updating unknown device`() = testApp { client ->
         val response = client.patch("/api/devices/9999") {
             contentType(ContentType.Application.Json)
-            setBody(UpdateDeviceRequest().apply { name = "new-name" })
+            setBody("""
+                {
+                    "name": "new-name"
+                }
+            """.trimIndent())
         }
 
         then(response.status).isEqualTo(HttpStatusCode.NotFound)
@@ -152,25 +156,29 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
         val group = createGroup(client, "Test Group")
         val device = createDevice(client, "pv-sensor", group.id, type = "pv")
         val logger = createLogger(client)
-        val phase = Phase(voltage = 230.0f, current = 4.3f, power = 1000, frequency = 50.0f)
 
         client.post("/api/measurements") {
             basicAuth(logger.id.toString(), logger.password!!)
             contentType(ContentType.Application.Json)
-            setBody(CreateMeasurementsRequest().apply {
-                measurements.add(PvMeasurement(
-                    deviceId = device.id,
-                    time = null,
-                    totalPower = 3000,
-                    energyToday = BigDecimal("12.5"),
-                    energyTotal = BigDecimal("1500.0"),
-                    phaseA = phase,
-                    phaseB = phase,
-                    phaseC = phase,
-                    pv1 = null,
-                    pv2 = null
-                ))
-            })
+            setBody("""
+                {
+                    "measurements": [
+                        {
+                            "type": "PV",
+                            "deviceId": ${device.id},
+                            "time": null,
+                            "totalPower": 3000,
+                            "energyToday": 12.5,
+                            "energyTotal": 1500.0,
+                            "phaseA": {"voltage": 230.0, "current": 4.3, "power": 1000, "frequency": 50.0},
+                            "phaseB": {"voltage": 230.0, "current": 4.3, "power": 1000, "frequency": 50.0},
+                            "phaseC": {"voltage": 230.0, "current": 4.3, "power": 1000, "frequency": 50.0},
+                            "pv1": null,
+                            "pv2": null
+                        }
+                    ]
+                }
+            """.trimIndent())
         }
 
         val response = client.get("/api/devices/${device.id}/live")
@@ -183,7 +191,12 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
     private suspend fun createGroup(client: HttpClient, name: String): GroupResource {
         return client.post("/api/groups") {
             contentType(ContentType.Application.Json)
-            setBody(CreateGroupRequest().apply { this.name = name; description = "desc" })
+            setBody("""
+                {
+                    "name": "$name",
+                    "description": "desc"
+                }
+            """.trimIndent())
         }.body()
     }
 
@@ -195,20 +208,27 @@ class DeviceControllerIntTest : BaseIntegrationTest() {
     ): DeviceResource {
         return client.post("/api/devices") {
             contentType(ContentType.Application.Json)
-            setBody(CreateDeviceRequest().apply {
-                this.name = name
-                description = "A sensor"
-                this.type = type
-                mac = "AA:BB:CC:DD:EE:FF"
-                this.groupId = groupId
-            })
+            setBody("""
+                {
+                    "name": "$name",
+                    "description": "A sensor",
+                    "type": "$type",
+                    "mac": "AA:BB:CC:DD:EE:FF",
+                    "groupId": $groupId
+                }
+            """.trimIndent())
         }.body()
     }
 
     private suspend fun createLogger(client: HttpClient): LoggerResource {
         return client.post("/api/loggers") {
             contentType(ContentType.Application.Json)
-            setBody(CreateLoggerRequest().apply { name = "test-logger"; description = "desc" })
+            setBody("""
+                {
+                    "name": "test-logger",
+                    "description": "desc"
+                }
+            """.trimIndent())
         }.body()
     }
 
