@@ -26,6 +26,10 @@
         <appender-ref ref="FILE" level="WARN"/>
     </root>
 
+    <logger name="REQUEST_LOGGER" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
     <logger name="dev.drzepka.smarthome.sensors.server" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>

@@ -1,9 +1,11 @@
 package dev.drzepka.smarthome.sensors.server.application.service
 
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import org.assertj.core.api.BDDAssertions.then
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 internal class ConfigurationProviderServiceTest {
 
@@ -11,10 +13,12 @@ internal class ConfigurationProviderServiceTest {
     fun `should load and use external config file`() {
         val service = getService()
 
-        then(service.getOptionalInt("prop.someInteger")).isEqualTo(100)
-        then(service.getOptionalInt("prop.anotherInteger")).isEqualTo(2)
-        then(service.getOptionalInt("yetAnotherInteger")).isEqualTo(40)
-        then(service.getOptionalInt("non.existent.prop")).isNull()
+        then(service.config.getInt("prop.someInteger")).isEqualTo(100)
+        then(service.config.getInt("prop.anotherInteger")).isEqualTo(2)
+        then(service.config.getInt("yetAnotherInteger")).isEqualTo(40)
+        assertThrows<ConfigException.Missing> {
+            service.config.getInt("non.existent.prop")
+        }
     }
 
     private fun getService(): ConfigurationProviderService = object : ConfigurationProviderService() {

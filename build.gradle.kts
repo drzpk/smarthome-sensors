@@ -99,6 +99,7 @@ jib {
         creationTime = "USE_CURRENT_TIMESTAMP"
         workingDirectory = "/app"
         labels.put("Maintainer", "dominik.1.rzepka@gmail.com")
+        jvmFlags = listOf("-Dlogback.configurationFile=\${LOGBACK_CONFIG_FILE}")
     }
     extraDirectories {
         paths {

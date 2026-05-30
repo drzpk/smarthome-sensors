@@ -18,7 +18,7 @@ import java.time.Instant
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
 class MeasurementService(
-    configurationProviderService: ConfigurationProviderService,
+    configurationProvider: ConfigurationProviderService,
     taskScheduler: TaskScheduler,
     private val measurementCreator: MeasurementCreator,
     private val measurementRepository: MeasurementRepository,
@@ -32,7 +32,7 @@ class MeasurementService(
     private val measurementTracker: LifespanTracker<Int>
 
     init {
-        val minIntervalSeconds = configurationProviderService.getInt("measurements.minimumCreationIntervalSeconds")
+        val minIntervalSeconds = configurationProvider.config.getInt("measurements.minimumCreationIntervalSeconds")
         minInterval = Duration.ofSeconds(minIntervalSeconds.toLong())
         log.info("Setting minimum measurement interval to {} seconds", minIntervalSeconds)
         measurementTracker = LifespanTracker(minInterval)
@@ -40,7 +40,6 @@ class MeasurementService(
         taskScheduler.schedule("measurementStorage", Duration.ofSeconds(30L), this::storeMeasurements)
     }
 
-    // todo: stats per time interval and per device (DeviceStatsService?)
     suspend fun createMeasurements(
         request: CreateMeasurementsRequest,
         logger: dev.drzepka.smarthome.sensors.server.domain.entity.Logger

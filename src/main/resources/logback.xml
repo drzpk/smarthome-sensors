@@ -35,7 +35,6 @@
 
     <logger name="dev.drzepka.smarthome.sensors.server" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </logger>
 
 </configuration>

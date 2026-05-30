@@ -25,23 +25,13 @@ class ConfigurationProviderService {
         }
     }
 
-    fun getInt(path: String, default: Int? = null): Int {
-        return getOptionalInt(path, default) ?: reportPropertyNotFound(path)
-    }
-
-    fun getOptionalInt(path: String, default: Int? = null): Int? {
-        if (!config.hasPath(path))
-            return null
-        return config.getInt(path)
-    }
-
     internal fun loadBaseConfiguration(): Config {
         return ConfigFactory.load()
     }
 
     internal fun loadExternalConfiguration(): Config? {
-        val path = System.getenv("CONFIGURATION_FILE")
-            ?: System.getProperty("CONFIGURATION_FILE")
+        val path = System.getenv("CONFIG_FILE")
+            ?: System.getProperty("CONFIG_FILE")
             ?: return null
         val file = File(path)
         if (!file.isFile)
@@ -49,9 +39,5 @@ class ConfigurationProviderService {
 
         log.info("Loading external configuration file $path")
         return ConfigFactory.parseFile(file)
-    }
-
-    private fun reportPropertyNotFound(path: String): Nothing {
-        throw IllegalStateException("Property '$path' wasn't found")
     }
 }

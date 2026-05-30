@@ -1,5 +1,6 @@
 package dev.drzepka.smarthome.sensors.server.domain.service
 
+import com.typesafe.config.ConfigFactory
 import dev.drzepka.smarthome.sensors.server.application.ValidationErrors
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.CreateMeasurementsRequest
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.TemperatureMeasurement
@@ -26,7 +27,13 @@ import java.time.Instant
 internal class MeasurementServiceTest {
 
     private val configurationProviderService = mock<ConfigurationProviderService> {
-        on { getInt(eq("measurements.minimumCreationIntervalSeconds"), eq(null)) } doReturn 30
+        val configText = """
+            measurements {
+                minimumCreationIntervalSeconds = 30
+            }
+        """.trimIndent()
+        val typesafeConfig = ConfigFactory.parseString(configText)
+        on { config } doReturn typesafeConfig
     }
     private val taskScheduler = mock<TaskScheduler> {
         on { schedule(any(), any(), any()) } doAnswer {

@@ -1,6 +1,7 @@
 package dev.drzepka.smarthome.sensors.server
 
 import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import dev.drzepka.smarthome.sensors.server.application.configuration.sensorsServerKoinModule
 import dev.drzepka.smarthome.sensors.server.application.configuration.setupRouting
@@ -34,6 +35,7 @@ fun Application.sensorsServer() {
         jackson {
             enable(JsonParser.Feature.ALLOW_COMMENTS)
             enable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION)
+            disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             registerModule(JavaTimeModule())
         }
     }

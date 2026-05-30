@@ -7,7 +7,6 @@ import dev.drzepka.smarthome.sensors.server.application.service.ConfigurationPro
 import dev.drzepka.smarthome.sensors.server.domain.util.Logger
 import dev.drzepka.smarthome.sensors.server.domain.util.Mockable
 
-@Suppress("LeakingThis")
 @Mockable
 class InfluxDBDatabaseManager(private val configProvider: ConfigurationProviderService) {
 
