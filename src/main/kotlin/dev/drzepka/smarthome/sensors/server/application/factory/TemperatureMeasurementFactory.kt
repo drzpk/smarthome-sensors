@@ -4,6 +4,7 @@ import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Temperat
 import dev.drzepka.smarthome.sensors.server.application.util.mapOfNotNull
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
+import dev.drzepka.smarthome.sensors.server.domain.util.asInt
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -28,7 +29,7 @@ class TemperatureMeasurementFactory : MeasurementFactory<TemperatureMeasurement>
         "temperature" to normalizeNumber(data.temperature, 2),
         "humidity" to normalizeNumber(data.humidity, 2),
         "battery_voltage" to data.batteryVoltage?.let { normalizeNumber(it, 3) },
-        "battery_level" to data.batteryLevel
+        "battery_level" to data.batteryLevel?.asInt()
     )
 
     private fun normalizeNumber(input: BigDecimal, scale: Int): BigDecimal = input.setScale(scale, RoundingMode.HALF_UP)

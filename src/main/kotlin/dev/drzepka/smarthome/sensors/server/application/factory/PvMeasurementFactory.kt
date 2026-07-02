@@ -6,6 +6,9 @@ import dev.drzepka.smarthome.sensors.server.application.dto.measurement.PvMeasur
 import dev.drzepka.smarthome.sensors.server.application.util.mapOfNotNull
 import dev.drzepka.smarthome.sensors.server.domain.entity.Device
 import dev.drzepka.smarthome.sensors.server.domain.entity.Measurement
+import dev.drzepka.smarthome.sensors.server.domain.util.asBigDecimal
+import dev.drzepka.smarthome.sensors.server.domain.util.asFloat
+import dev.drzepka.smarthome.sensors.server.domain.util.asInt
 import java.time.Instant
 import dev.drzepka.smarthome.sensors.server.application.dto.measurement.Measurement as MeasurementDto
 
@@ -44,19 +47,19 @@ class PvMeasurementFactory : MeasurementFactory<PvMeasurement> {
 
     private fun phaseFields(prefix: String, phase: Phase?): Map<String, Number> = if (phase != null)
         mapOfNotNull(
-            "${prefix}_voltage" to phase.voltage,
-            "${prefix}_current" to phase.current,
-            "${prefix}_power" to phase.power,
-            "${prefix}_frequency" to phase.frequency
+            "${prefix}_voltage" to phase.voltage.asFloat(),
+            "${prefix}_current" to phase.current.asFloat(),
+            "${prefix}_power" to phase.power?.asInt(),
+            "${prefix}_frequency" to phase.frequency.asFloat()
         )
     else emptyMap()
 
     private fun pvPanelFields(prefix: String, pv: Pv?): Map<String, Number> = if (pv != null)
         mapOf(
-            "${prefix}_voltage" to pv.voltage,
-            "${prefix}_current" to pv.current,
-            "${prefix}_power" to pv.power,
-            "${prefix}_energy_today" to pv.energyToday
+            "${prefix}_voltage" to pv.voltage.asFloat(),
+            "${prefix}_current" to pv.current.asFloat(),
+            "${prefix}_power" to pv.power.asInt(),
+            "${prefix}_energy_today" to pv.energyToday.asBigDecimal()
         )
     else emptyMap()
 
