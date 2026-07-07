@@ -90,9 +90,13 @@ jib {
     to {
         image = getContainerRegistryImage()
         tags = setOf(project.version as String)
-        auth {
-            username = getContainerRegistryUser()
-            password = getContainerRegistryPassword()
+        val registryUser = System.getenv("CI_DEPLOY_USER")
+        val registryPassword = System.getenv("CI_DEPLOY_PASSWORD")
+        if (registryUser != null && registryPassword != null) {
+            auth {
+                username = registryUser
+                password = registryPassword
+            }
         }
     }
     container {
@@ -116,27 +120,4 @@ jib {
 fun getContainerRegistryImage(): String {
     return System.getenv("CONTAINER_REGISTRY_IMAGE")
         ?: "registry.gitlab.com/smart-home-dr/sensors/sensors"
-}
-
-fun getContainerRegistryUser(): String {
-    val user = System.getenv("CI_DEPLOY_USER")
-    if (user != null)
-        return user
-
-    return "d_rzepka"
-}
-
-fun getContainerRegistryPassword(): String {
-    val ciToken = System.getenv("CI_DEPLOY_PASSWORD")
-    if (ciToken != null)
-        return ciToken
-
-    // from ~/.gradle/gradle.properties
-    val privateToken = findProperty("gitLabPrivateToken") as String?
-    return if (privateToken == null) {
-        logger.warn("Container registry token is missing, publishing will fail")
-        ""
-    } else {
-        privateToken
-    }
 }
