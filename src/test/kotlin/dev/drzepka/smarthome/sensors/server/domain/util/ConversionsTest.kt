@@ -28,6 +28,15 @@ class ConversionsTest {
     }
 
     @Test
+    fun `asDouble should return correct value for different number types`() {
+        then(3.14.asDouble()).isEqualTo(3.14)
+        then(42.asDouble()).isEqualTo(42.0)
+        then(42L.asDouble()).isEqualTo(42.0)
+        then(3.14f.asDouble()).isEqualTo(3.14f.toDouble())
+        then(BigDecimal("3.14").asDouble()).isEqualTo(3.14)
+    }
+
+    @Test
     fun `asFloat should return correct value for different number types`() {
         then(3.14f.asFloat()).isEqualTo(3.14f)
         then(42.asFloat()).isEqualTo(42.0f)

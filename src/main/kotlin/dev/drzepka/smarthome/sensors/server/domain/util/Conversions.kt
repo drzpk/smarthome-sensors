@@ -18,6 +18,11 @@ fun Number.asFloat(): Float = when (this) {
     else -> toFloat()
 }
 
+fun Number.asDouble(): Double = when (this) {
+    is Double -> this
+    else -> toDouble()
+}
+
 fun Number.asBigDecimal(): BigDecimal = when (this) {
     is BigDecimal -> this
     is Float -> toBigDecimal()

@@ -1,26 +1,11 @@
 package dev.drzepka.smarthome.sensors.server.application.configuration
 
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCommonValidator
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementCreator
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementFactory
-import dev.drzepka.smarthome.sensors.server.application.factory.MeasurementValidator
-import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementFactory
-import dev.drzepka.smarthome.sensors.server.application.factory.PvMeasurementValidator
-import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementFactory
-import dev.drzepka.smarthome.sensors.server.application.factory.TemperatureMeasurementValidator
+import dev.drzepka.smarthome.sensors.server.application.factory.*
 import dev.drzepka.smarthome.sensors.server.application.service.*
-import dev.drzepka.smarthome.sensors.server.domain.repository.DeviceRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.GroupRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.LiveDataRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.LoggerRepository
-import dev.drzepka.smarthome.sensors.server.domain.repository.MeasurementRepository
+import dev.drzepka.smarthome.sensors.server.domain.repository.*
 import dev.drzepka.smarthome.sensors.server.infrastructure.database.InfluxDBDatabaseManager
 import dev.drzepka.smarthome.sensors.server.infrastructure.database.SQLDatabaseInitializer
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedDeviceRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedGroupRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.ExposedLoggerRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InfluxDBMeasurementRepository
-import dev.drzepka.smarthome.sensors.server.infrastructure.repository.InMemoryLiveDataRepository
+import dev.drzepka.smarthome.sensors.server.infrastructure.repository.*
 import dev.drzepka.smarthome.sensors.server.infrastructure.service.PBKDF2HashService
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -35,8 +20,8 @@ fun sensorsServerKoinModule(): Module = module {
     single { GroupService(get(), get()) }
     single { PasswordGeneratorService(get()) }
     single { TaskScheduler() }
-    single<List<MeasurementValidator<*>>>(named("validators")) { listOf(TemperatureMeasurementValidator(), PvMeasurementValidator()) }
-    single<List<MeasurementFactory<*>>>(named("factories")) { listOf(TemperatureMeasurementFactory(), PvMeasurementFactory()) }
+    single<List<MeasurementValidator<*>>>(named("validators")) { listOf(TemperatureMeasurementValidator(), PvMeasurementValidator(), EnergyMeasurementValidator()) }
+    single<List<MeasurementFactory<*>>>(named("factories")) { listOf(TemperatureMeasurementFactory(), PvMeasurementFactory(), EnergyMeasurementFactory()) }
     single { MeasurementCommonValidator() }
     single { MeasurementCreator(deviceRepository = get(), commonValidator = get(), validators = get(named("validators")), factories = get(named("factories"))) }
 

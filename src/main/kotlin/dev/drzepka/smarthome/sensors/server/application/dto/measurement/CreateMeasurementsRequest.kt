@@ -13,6 +13,7 @@ class CreateMeasurementsRequest {
 @JsonSubTypes(
     JsonSubTypes.Type(value = TemperatureMeasurement::class, name = "TEMPERATURE"),
     JsonSubTypes.Type(value = PvMeasurement::class, name = "PV"),
+    JsonSubTypes.Type(value = EnergyMeasurement::class, name = "ENERGY"),
 )
 interface Measurement {
     val mac: String
@@ -53,4 +54,30 @@ data class Pv(
     val current: Float,
     val power: Int,
     val energyToday: BigDecimal
+)
+
+data class EnergyMeasurement(
+    override val mac: String,
+    override val time: Instant?,
+    val phaseA: EnergyPhase,
+    val phaseB: EnergyPhase,
+    val phaseC: EnergyPhase
+) : Measurement
+
+data class EnergyPhase(
+    val totalActiveEnergy: Double,
+    val totalActiveReturnedEnergy: Double,
+    val maxActivePower: Float,
+    val minActivePower: Float,
+    val maxApparentPower: Float,
+    val minApparentPower: Float,
+    val maxVoltage: Float,
+    val minVoltage: Float,
+    val maxCurrent: Float,
+    val minCurrent: Float,
+
+    val fundamentalActiveEnergy: Float,
+    val fundamentalActiveReturnedEnergy: Float,
+    val laggingReactiveEnergy: Float,
+    val leadingReactiveEnergy: Float
 )
