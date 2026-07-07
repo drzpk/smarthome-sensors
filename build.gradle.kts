@@ -1,3 +1,4 @@
+import com.google.cloud.tools.jib.api.buildplan.ImageFormat
 import com.google.cloud.tools.jib.gradle.JibTask
 
 plugins {
@@ -96,6 +97,7 @@ jib {
     }
     container {
         mainClass = "io.ktor.server.tomcat.jakarta.EngineMain"
+        format = ImageFormat.OCI
         creationTime = "USE_CURRENT_TIMESTAMP"
         workingDirectory = "/app"
         labels.put("Maintainer", "dominik.1.rzepka@gmail.com")
