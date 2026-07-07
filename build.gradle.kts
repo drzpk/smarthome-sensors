@@ -87,7 +87,7 @@ jib {
         image = "eclipse-temurin:21-jre"
     }
     to {
-        image = "registry.gitlab.com/smart-home-dr/sensors/sensors"
+        image = getContainerRegistryImage()
         tags = setOf(project.version as String)
         auth {
             username = getContainerRegistryUser()
@@ -109,6 +109,11 @@ jib {
             }
         }
     }
+}
+
+fun getContainerRegistryImage(): String {
+    return System.getenv("CONTAINER_REGISTRY_IMAGE")
+        ?: "registry.gitlab.com/smart-home-dr/sensors/sensors"
 }
 
 fun getContainerRegistryUser(): String {
